@@ -2,7 +2,8 @@
 
 part of occam;
 
-class StateController<T extends StateWidget> extends State<T> {
+// class StateController<T extends StateWidget> extends State<T> {
+class StateController extends State {
   @mustCallSuper
   @alwaysThrows
   @override
@@ -13,8 +14,8 @@ class StateController<T extends StateWidget> extends State<T> {
   @override
   @mustCallSuper
   void initState() {
-    print('$this initializated');
     super.initState();
+    print('$this initializated');
   }
 
   /// Use this instead of didChangeDependencies() / initState()

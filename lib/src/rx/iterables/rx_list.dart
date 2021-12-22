@@ -40,7 +40,6 @@ class RxList<T> extends RxInterface<List<T>> with ListMixin<T> {
   @override
   void addAll(Iterable<T> iterable) {
     value.addAll(iterable);
-
     refresh();
   }
 

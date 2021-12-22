@@ -29,10 +29,6 @@ class Rx<T> extends RxInterface<T> with RxMixin<T>, RxNotifierMixin<T> {
   Rx(T value) : super(value);
 }
 
-class RxInt extends RxInterface<int> {
-  RxInt(int value) : super(value);
-}
-
 mixin RxNotifierMixin<T> on ValueNotifier<T> {
   final Map<Stream, StreamSubscription> _subscriptions = {};
 
@@ -47,8 +43,6 @@ mixin RxNotifierMixin<T> on ValueNotifier<T> {
     _listeners.add(listener);
     super.addListener(listener);
   }
-
-  
 
   @override
   void removeListener(VoidCallback listener) {

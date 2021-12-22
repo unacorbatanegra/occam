@@ -1,8 +1,6 @@
 import 'package:occam/occam.dart';
 
-import 'second_page.dart';
-
-class SecondController extends StateController<SecondPage> {
+class SecondController extends StateController {
   final notifier = ''.rx;
   @override
   void readyState() {
@@ -21,7 +19,6 @@ class SecondController extends StateController<SecondPage> {
 
   @override
   void dispose() {
-    // TODO: implement dispose
     notifier.dispose();
     super.dispose();
   }

@@ -15,7 +15,7 @@ class HomePage extends StateWidget<HomeController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Jasn Demo'),
+        title: const Text('Occam Demo'),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: state.onButton,
