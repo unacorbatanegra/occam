@@ -1,11 +1,44 @@
 part of occam;
 
-class RxNotifier<T> extends ValueNotifier<T> {
+abstract class RxInterface<T> extends ValueNotifier<T>
+    with RxMixin<T>, RxNotifierMixin<T> {
+  RxInterface(T value) : super(value);
+}
+
+mixin RxMixin<T> on ValueNotifier<T> {
+  T call([T? newValue]) {
+    if (newValue != null && newValue != value) {
+      value = newValue;
+    }
+    return value;
+  }
+
+  void refresh() => notifyListeners();
+
+  @override
+  set value(T newValue) {
+    if (newValue != super.value) super.value = newValue;
+  }
+
+  void update(T Function(T value) fn) {
+    value = fn(super.value);
+  }
+}
+
+class Rx<T> extends RxInterface<T> with RxMixin<T>, RxNotifierMixin<T> {
+  Rx(T value) : super(value);
+}
+
+class RxInt extends RxInterface<int> {
+  RxInt(int value) : super(value);
+}
+
+mixin RxNotifierMixin<T> on ValueNotifier<T> {
   final Map<Stream, StreamSubscription> _subscriptions = {};
 
   final _listeners = <VoidCallback>[];
 
-  RxNotifier(T value) : super(value);
+  // RxNotifier(T value) : super(value);
 
   final Map<ValueChanged<T>, VoidCallback> _valueListeners = {};
 
@@ -14,6 +47,8 @@ class RxNotifier<T> extends ValueNotifier<T> {
     _listeners.add(listener);
     super.addListener(listener);
   }
+
+  
 
   @override
   void removeListener(VoidCallback listener) {
@@ -54,31 +89,13 @@ class RxNotifier<T> extends ValueNotifier<T> {
     _subscriptions[stream] = subscription;
   }
 
-  T call([T? newValue]) {
-    if (newValue != null && newValue != value) {
-      value = newValue;
-    }
-    return value;
-  }
-
-  @override
-  set value(T newValue) {
-    if (newValue != super.value) super.value = newValue;
-  }
-
   @override
   T get value => super.value;
-
-  void update(T Function(T value) fn) {
-    value = fn(super.value);
-  }
 
   /// To prevent potential thrown exceptions.
   bool _disposed = false;
 
   bool get disposed => _disposed;
-
-  void refresh() => notifyListeners();
 
   @override
   void dispose() {

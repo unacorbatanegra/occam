@@ -1,4 +1,3 @@
-
 import 'package:occam/occam.dart';
 
 import 'home_page.dart';
@@ -7,7 +6,7 @@ class HomeController extends StateController<HomePage> {
   String customVar = 'unacorbatanegra';
   final counter = 1.rx;
 
-  final model = RxNotifier<Model>(Model(age: '20', name: 'Nico'));
+  final model = Rx<Model>(Model(age: '20', name: 'Nico'));
   @override
   void readyState() async {
     // WidgetsBinding.instance!.addObserver(this);
@@ -23,7 +22,7 @@ class HomeController extends StateController<HomePage> {
 
   // @override
   // void didChangeAppLifecycleState(AppLifecycleState state) {
-    
+
   //   print(state);
   //   super.didChangeAppLifecycleState(state);
   // }
