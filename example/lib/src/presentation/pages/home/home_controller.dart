@@ -1,7 +1,5 @@
 import 'package:occam/occam.dart';
 
-import 'home_page.dart';
-
 class HomeController extends StateController {
   String customVar = 'unacorbatanegra';
   final counter = 1.rx;

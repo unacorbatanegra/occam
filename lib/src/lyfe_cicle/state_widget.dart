@@ -45,7 +45,9 @@ class StateElement extends StatefulElement {
   void rebuild() {
     if (_justMounted) {
       _justMounted = false;
-      (state as StateController).readyState();
+      WidgetsBinding.instance?.addPostFrameCallback(
+        (_) => (state as StateController).readyState(),
+      );
     }
     super.rebuild();
   }

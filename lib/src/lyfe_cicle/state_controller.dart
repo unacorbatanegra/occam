@@ -2,8 +2,8 @@
 
 part of occam;
 
-// class StateController<T extends StateWidget> extends State<T> {
-class StateController extends State {
+class StateController<T extends StateWidget> extends State<T> {
+// class StateController extends State {
   @mustCallSuper
   @alwaysThrows
   @override

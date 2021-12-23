@@ -1,7 +1,7 @@
 part of occam;
 
 class RxWidget<T> extends StatefulWidget {
-  final RxNotifierMixin<T> notifier;
+  final Rx<T> notifier;
   final Widget Function(BuildContext context, T value) builder;
 
   const RxWidget({
