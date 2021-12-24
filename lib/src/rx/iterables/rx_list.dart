@@ -43,6 +43,11 @@ class RxList<T> extends RxInterface<List<T>> with ListMixin<T> {
     refresh();
   }
 
+  void asignAll(Iterable<T> iterable) {
+    value.clear();
+    value.addAll(iterable);
+  }
+
   @override
   bool get hasListeners => _listeners.isNotEmpty;
 

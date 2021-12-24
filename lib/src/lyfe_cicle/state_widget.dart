@@ -11,7 +11,7 @@ abstract class StateWidget<T extends State> extends StatefulWidget {
   StateElement createElement() => StateElement(this);
 
   @override
-  StateController createState();
+  T createState();
 }
 
 class StateElement extends StatefulElement {
