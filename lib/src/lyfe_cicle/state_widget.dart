@@ -28,7 +28,7 @@ class StateElement extends StatefulElement {
     _justMounted = true;
     super.mount(parent, newSlot);
   }
-
+  
   @override
   void unmount() {
     _justMounted = false;
