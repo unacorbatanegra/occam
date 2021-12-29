@@ -14,7 +14,8 @@ class BottomPage extends StateWidget<BottomController> {
     return Scaffold(
       body: RxWidget<int>(
         notifier: state.currentIndex,
-        builder: (ctx, value) => Container(
+        builder: (ctx, value) => PageStorage(
+          bucket: state.bucket,
           child: state.list[value],
         ),
       ),
@@ -24,14 +25,8 @@ class BottomPage extends StateWidget<BottomController> {
           currentIndex: value,
           onTap: state.currentIndex,
           items: [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Home'
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.settings),
-              label: 'Home'
-            )
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+            BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Home')
           ],
         ),
       ),

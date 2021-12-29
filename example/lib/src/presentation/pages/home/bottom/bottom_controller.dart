@@ -5,7 +5,8 @@ import 'bottom_page.dart';
 import 'page_1.dart';
 
 class BottomController extends StateController<BottomPage> {
-  final list = [Page1(), Page2()];
+   final PageStorageBucket bucket = PageStorageBucket();
+  final list = [Page1(key: PageStorageKey('Key1'),), Page2(key: PageStorageKey('Key2'),)];
 
   final currentIndex = 0.rx;
 

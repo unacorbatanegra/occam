@@ -28,7 +28,7 @@ class StateElement extends StatefulElement {
     _justMounted = true;
     super.mount(parent, newSlot);
   }
-  
+
   @override
   void unmount() {
     _justMounted = false;
@@ -56,5 +56,9 @@ class StateElement extends StatefulElement {
   StateWidget get widget => super.widget as StateWidget;
 
   @override
-  Widget build() => widget.build(this);
+  Widget build() {
+    // ignore: invalid_use_of_protected_member
+    return state.build(this);
+    // return widget.build(this);
+  }
 }

@@ -9,8 +9,6 @@ class Page1 extends StateWidget<Page1Controller> {
 
   @override
   Widget build(BuildContext context) {
-    state.build(context);
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Page 1'),
@@ -21,6 +19,12 @@ class Page1 extends StateWidget<Page1Controller> {
 
 class Page1Controller extends StateController<Page1>
     with AutomaticKeepAliveClientMixin<Page1> {
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.build(context);
+  }
+
   @override
   bool get wantKeepAlive => true;
 }
@@ -33,7 +37,6 @@ class Page2 extends StateWidget<Page2Controller> {
 
   @override
   Widget build(BuildContext context) {
-    state.build(context);
     return Scaffold(
       appBar: AppBar(
         title: Text('Page 2'),
@@ -44,6 +47,12 @@ class Page2 extends StateWidget<Page2Controller> {
 
 class Page2Controller extends StateController<Page2>
     with AutomaticKeepAliveClientMixin<Page2> {
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.build(context);
+  }
+
   @override
   bool get wantKeepAlive => true;
 }
