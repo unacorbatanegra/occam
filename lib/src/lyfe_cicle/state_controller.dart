@@ -8,8 +8,7 @@ class StateController<T extends StateWidget> extends State<T> {
   @alwaysThrows
   @override
   Widget build(BuildContext context) {
-    return widget.build(context);
-    // throw "$runtimeType.build() is invalid. Use <StateWidget.build()> instead.";
+    throw "$runtimeType.build() is invalid. Use <StateWidget.build()> instead.";
   }
 
   @override
