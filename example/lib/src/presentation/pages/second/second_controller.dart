@@ -2,6 +2,7 @@ import 'package:occam/occam.dart';
 
 class SecondController extends StateController {
   final notifier = ''.rx;
+  final list = <String>[].rx;
   @override
   void readyState() {
     print(navigatorArguments);
@@ -12,7 +13,8 @@ class SecondController extends StateController {
   }
 
   void back() {
-    navigator.pop('test result argument');
+    list.add(DateTime.now().toIso8601String());
+    // navigator.pop('test result argument');
   }
 
   void test() {}

@@ -28,6 +28,20 @@ class SecondPage extends StateWidget<SecondController> {
               child: const Text('Back'),
             ),
           ),
+          Expanded(
+            child: RxWidget<List<String>>(
+              notifier: state.list,
+              builder: (ctx, value) => ListView.separated(
+                itemBuilder: (ctx, idx) {
+                  return ListTile(
+                    title: Text(value[idx]),
+                  );
+                },
+                separatorBuilder: (ctx, idx) => SizedBox.shrink(),
+                itemCount: state.list.length,
+              ),
+            ),
+          )
         ],
       ),
     );

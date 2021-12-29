@@ -1,3 +1,4 @@
+import 'package:example/src/presentation/pages/home/bottom/bottom_page.dart';
 import 'package:occam/occam.dart';
 
 class HomeController extends StateController {
@@ -42,6 +43,10 @@ class HomeController extends StateController {
 
   void onTestStateless() {
     print(this);
+  }
+
+  void toBottom() {
+    navigator.pushNamed('/bottom');
   }
 }
 

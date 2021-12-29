@@ -42,6 +42,12 @@ class HomePage extends StateWidget<HomeController> {
               child: const Text('To Second page'),
             ),
           ),
+          Center(
+            child: ElevatedButton(
+              onPressed: state.toBottom,
+              child: const Text('To Bottom'),
+            ),
+          ),
         ],
       ),
     );

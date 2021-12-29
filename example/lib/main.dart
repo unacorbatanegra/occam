@@ -1,3 +1,4 @@
+import 'package:example/src/presentation/pages/home/bottom/bottom_page.dart';
 import 'package:example/src/presentation/pages/second/second_page.dart';
 import 'package:flutter/material.dart';
 
@@ -22,6 +23,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (ctx) => const HomePage(),
         '/secondPage': (ctx) => const SecondPage(),
+        '/bottom': (ctx) => const BottomPage(),
       },
     );
   }
