@@ -56,9 +56,5 @@ class StateElement extends StatefulElement {
   StateWidget get widget => super.widget as StateWidget;
 
   @override
-  Widget build() {
-    // ignore: invalid_use_of_protected_member
-    return state.build(this);
-    // return widget.build(this);
-  }
+  Widget build() => widget.build(this);
 }

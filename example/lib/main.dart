@@ -2,7 +2,7 @@ import 'package:example/src/presentation/pages/home/bottom/bottom_page.dart';
 import 'package:example/src/presentation/pages/second/second_page.dart';
 import 'package:flutter/material.dart';
 
-import 'src/presentation/pages/second/home_page.dart';
+import 'src/presentation/pages/home/home_page.dart';
 
 void main() {
   runApp(const MyApp());

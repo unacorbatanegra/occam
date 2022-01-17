@@ -3,7 +3,9 @@ import 'package:example/src/presentation/pages/home/widgets/child_consumer.dart'
 import 'package:flutter/material.dart';
 import 'package:occam/occam.dart';
 
-import '../home/home_controller.dart';
+import 'home_controller.dart';
+
+
 
 class HomePage extends StateWidget<HomeController> {
   const HomePage({Key? key}) : super(key: key);
