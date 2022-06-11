@@ -5,7 +5,6 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:meta/meta.dart';
 
-// part 'src/rx/disposer_notifier.dart';
 part 'src/rx/extensions.dart';
 part 'src/rx/rx_notifier.dart';
 part 'src/rx/iterables/rx_list.dart';

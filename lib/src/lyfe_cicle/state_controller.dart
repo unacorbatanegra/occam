@@ -27,10 +27,6 @@ class StateController<T extends StateWidget> extends State<T> {
   @override
   StatefulElement get context => super.context as StatefulElement;
 
-  NavigatorState get navigator => Navigator.of(context);
-
-  Object? get navigatorArguments => ModalRoute.of(context)?.settings.arguments;
-
   @mustCallSuper
   @override
   void dispose() {

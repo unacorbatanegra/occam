@@ -1,4 +1,3 @@
-import 'package:example/src/presentation/pages/home/bottom/bottom_page.dart';
 import 'package:occam/occam.dart';
 
 class HomeController extends StateController {
@@ -6,6 +5,11 @@ class HomeController extends StateController {
   final counter = 1.rx;
 
   final model = Rx<Model>(Model(age: '20', name: 'Nico'));
+  @override
+  void initState() {
+    super.initState();
+  }
+
   @override
   void readyState() async {
     // WidgetsBinding.instance!.addObserver(this);

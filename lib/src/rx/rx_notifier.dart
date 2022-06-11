@@ -27,8 +27,6 @@ mixin RxMixin<T> on ValueNotifier<T> {
 
 class Rx<T> extends RxInterface<T> with RxMixin<T>, RxNotifierMixin<T> {
   Rx(T value) : super(value);
-
-
 }
 
 mixin RxNotifierMixin<T> on ValueNotifier<T> {
