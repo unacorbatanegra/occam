@@ -60,3 +60,10 @@ class RxList<T> extends RxInterface<List<T>> with ListMixin<T> {
     refresh();
   }
 }
+
+extension Native<T> on List<T> {
+  void asignAll(Iterable<T> iterable) {
+    clear();
+    addAll(iterable);
+  }
+}
