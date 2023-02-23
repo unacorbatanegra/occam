@@ -15,7 +15,7 @@ class StateController<T extends StateWidget> extends State<T> {
   @mustCallSuper
   void initState() {
     super.initState();
-    print('$this initializated');
+    if (kDebugMode) print('$this initializated');
   }
 
   /// Use this instead of didChangeDependencies() / initState()

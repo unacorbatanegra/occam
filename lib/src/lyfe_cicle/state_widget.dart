@@ -41,15 +41,16 @@ class StateElement extends StatefulElement {
     super.update(newWidget);
   }
 
+
   @override
-  void rebuild() {
+  void performRebuild() {
     if (_justMounted) {
       _justMounted = false;
-      WidgetsBinding.instance?.addPostFrameCallback(
+      WidgetsBinding.instance.addPostFrameCallback(
         (_) => (state as StateController).readyState(),
       );
     }
-    super.rebuild();
+    super.performRebuild();
   }
 
   @override
