@@ -15,6 +15,10 @@ class SecondPage extends StateWidget<SecondController> {
       appBar: AppBar(
         title: const Text('Second Page'),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: state.onButton,
+        child: const Icon(Icons.add),
+      ),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -28,15 +32,17 @@ class SecondPage extends StateWidget<SecondController> {
               child: const Text('Back'),
             ),
           ),
+          RxWidget<int>(
+            notifier: state.counter,
+            builder: (ctx, v) => Text('reactive $v'),
+          ),
           Expanded(
             child: RxWidget<List<String>>(
               notifier: state.list,
               builder: (ctx, value) => ListView.separated(
-                itemBuilder: (ctx, idx) {
-                  return ListTile(
+                itemBuilder: (ctx, idx) => ListTile(
                     title: Text(value[idx]),
-                  );
-                },
+                ),
                 separatorBuilder: (ctx, idx) => SizedBox.shrink(),
                 itemCount: state.list.length,
               ),

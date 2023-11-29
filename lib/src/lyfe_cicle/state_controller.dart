@@ -5,7 +5,7 @@ part of occam;
 class StateController<T extends StateWidget> extends State<T> {
 // class StateController extends State {
   @mustCallSuper
-  @alwaysThrows
+  // @t
   @override
   Widget build(BuildContext context) {
     throw "$runtimeType.build() is invalid. Use <StateWidget.build()> instead.";
@@ -15,7 +15,7 @@ class StateController<T extends StateWidget> extends State<T> {
   @mustCallSuper
   void initState() {
     super.initState();
-    if (kDebugMode) print('$this initializated');
+    if (OccamDebug.debug) print('$this initializated');
   }
 
   /// Use this instead of didChangeDependencies() / initState()
@@ -30,7 +30,7 @@ class StateController<T extends StateWidget> extends State<T> {
   @mustCallSuper
   @override
   void dispose() {
-    print('$this disposed');
+    if (OccamDebug.debug) print('$this disposed');
     super.dispose();
   }
 }

@@ -1,11 +1,8 @@
-import 'package:example/src/presentation/pages/home/nested/nested_child.dart';
-import 'package:example/src/presentation/pages/home/widgets/child_consumer.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:occam/occam.dart';
 
 import 'home_controller.dart';
-
-
 
 class HomePage extends StateWidget<HomeController> {
   const HomePage({Key? key}) : super(key: key);
@@ -24,32 +21,40 @@ class HomePage extends StateWidget<HomeController> {
         child: const Icon(Icons.add),
       ),
       body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
+        // mainAxisAlignment: MainAxisAlignment.center,
+        // crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          RxWidget<int>(
-            notifier: state.counter,
-            builder: (ctx, v) => Text('reactive $v'),
+          Center(
+            child: RxWidget<int>(
+              notifier: state.counter,
+              builder: (ctx, v) => Text(
+                '$v',
+              ),
+            ),
           ),
           RxWidget<Model>(
             notifier: state.model,
             builder: (ctx, v) => Text('reactive $v'),
           ),
-          // ValueListenableBuilder(valueListenable: valueListenable, builder: builder)
-          const ChildConsumer(),
-          const NestedChild(),
+          CupertinoButton(
+            child: Text('Change reactive'),
+            onPressed: state.onTap,
+          ),
+          // // ValueListenableBuilder(valueListenable: valueListenable, builder: builder)
+          // const ChildConsumer(),
+          // const NestedChild(),
           Center(
             child: ElevatedButton(
               onPressed: state.toSecondPage,
               child: const Text('To Second page'),
             ),
           ),
-          Center(
-            child: ElevatedButton(
-              onPressed: state.toBottom,
-              child: const Text('To Bottom'),
-            ),
-          ),
+          // Center(
+          //   child: ElevatedButton(
+          //     onPressed: state.toBottom,
+          //     child: const Text('To Bottom'),
+          //   ),
+          // ),
         ],
       ),
     );

@@ -48,8 +48,8 @@ class RxList<T> extends RxInterface<List<T>> with ListMixin<T> {
     addAll(iterable);
   }
 
-  @override
-  bool get hasListeners => _listeners.isNotEmpty;
+  // @override
+  // bool get hasListeners => _listeners.isNotEmpty;
 
   @override
   int get length => value.length;

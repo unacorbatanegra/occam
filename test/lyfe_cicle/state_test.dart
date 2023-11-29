@@ -1,12 +1,23 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:occam/occam.dart';
 
+// class MockMyPageController extends Mock implements MyPageController {}
+
 void main() {
   testWidgets(
-    "State",
+    "Navigation",
     (tester) async {
-      await tester.pumpWidget(const MaterialApp(home: MyPage()));
+      // final controller = MockMyPageController();
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: MyPage(),
+        ),
+      );
+
+      // controller.onPressed();
+      // verify(controller.onPressed());
       expect(find.byKey(const Key("rx")), findsOneWidget);
       final button = find.byType(TextButton);
       expect(find.text("1"), findsOneWidget);
@@ -14,10 +25,12 @@ void main() {
       await tester.tap(button);
       await tester.pump();
       expect(find.text("2"), findsOneWidget);
+      // verify(controller.onPressed()).called(1);
     },
   );
 }
 
+// @GenerateNiceMocks([MockSpec<MyPageController>()])
 class MyPageController extends StateController {
   final counter = 1.rx;
 
@@ -33,7 +46,9 @@ class MyPageController extends StateController {
 }
 
 class MyPage extends StateWidget<MyPageController> {
-  const MyPage({Key? key}) : super(key: key);
+  const MyPage({
+    super.key,
+  });
 
   @override
   MyPageController createState() => MyPageController();

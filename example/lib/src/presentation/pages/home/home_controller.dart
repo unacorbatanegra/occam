@@ -30,9 +30,7 @@ class HomeController extends StateController {
   //   super.didChangeAppLifecycleState(state);
   // }
 
-  void onButton() {
-    counter.value++;
-  }
+  void onButton() => counter.value++;
 
   void onTap() {
     model.value.name = 'unacorbatanegra';
@@ -63,5 +61,5 @@ class Model {
   });
 
   @override
-  String toString() => 'Model(name: $name, age: $age)';
+  String toString() => name;
 }

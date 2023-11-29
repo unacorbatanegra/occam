@@ -24,11 +24,12 @@ class RxBool extends RxInterface<bool> {
   /// Returns either `"true"` for `true` and `"false"` for `false`.
   @override
   String toString() {
-    return value ? "true" : "false";
+    return '$value';
   }
 
   @override
   bool operator ==(Object other) {
+    if (identical(this, other)) return true;
     if (other is bool) return other == value;
     if (other is RxBool) return other.value == value;
     return false;
@@ -40,5 +41,5 @@ class RxBool extends RxInterface<bool> {
   }
 
   @override
-  int get hashCode => super.hashCode;
+  int get hashCode => value.hashCode;
 }

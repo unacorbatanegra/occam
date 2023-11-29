@@ -34,8 +34,6 @@ mixin RxNotifierMixin<T> on ValueNotifier<T> {
 
   final _listeners = <VoidCallback>[];
 
-  // RxNotifier(T value) : super(value);
-
   final Map<ValueChanged<T>, VoidCallback> _valueListeners = {};
 
   @override
@@ -46,8 +44,8 @@ mixin RxNotifierMixin<T> on ValueNotifier<T> {
 
   @override
   void removeListener(VoidCallback listener) {
-    _listeners.remove(listener);
     super.removeListener(listener);
+    _listeners.remove(listener);
   }
 
   void addValueListener(ValueChanged<T> listener) {
@@ -72,9 +70,7 @@ mixin RxNotifierMixin<T> on ValueNotifier<T> {
   void bindStream(Stream<T> stream) {
     late StreamSubscription subscription;
     subscription = stream.asBroadcastStream().listen(
-      (event) {
-        value = event;
-      },
+      (event) => value = event,
       onDone: () {
         subscription.cancel();
         _subscriptions.remove(subscription);
@@ -83,11 +79,11 @@ mixin RxNotifierMixin<T> on ValueNotifier<T> {
     _subscriptions[stream] = subscription;
   }
 
-  @override
-  T get value => super.value;
-
   /// To prevent potential thrown exceptions.
   bool _disposed = false;
+
+  @override
+  bool get hasListeners => _listeners.isNotEmpty;
 
   bool get disposed => _disposed;
 
