@@ -9,13 +9,27 @@ on:
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./
     steps:
       - uses: actions/checkout@v2
+      - uses: dart-lang/setup-dart@v1
       - uses: subosito/flutter-action@v1
         with:
           flutter-version: '3.10.5'
           channel: 'stable'
-      - run: |
-          flutter pub get
-          flutter test
+
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed ./lib ./test    
+
+      - name: Install dependencies
+        run: flutter pub get
+      
+      - name: Analyze project source
+        run: flutter analyze ./lib ./test
+
+      - name: Run tests
+        run: flutter test
+
  

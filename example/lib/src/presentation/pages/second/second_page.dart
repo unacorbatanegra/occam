@@ -41,7 +41,7 @@ class SecondPage extends StateWidget<SecondController> {
               notifier: state.list,
               builder: (ctx, value) => ListView.separated(
                 itemBuilder: (ctx, idx) => ListTile(
-                    title: Text(value[idx]),
+                  title: Text(value[idx]),
                 ),
                 separatorBuilder: (ctx, idx) => SizedBox.shrink(),
                 itemCount: state.list.length,
