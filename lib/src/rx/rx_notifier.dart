@@ -1,8 +1,11 @@
 part of occam;
 
-abstract class RxInterface<T> extends ValueNotifier<T>
-    with RxMixin<T>, RxNotifierMixin<T> {
+abstract class RxInterface<T> extends ValueNotifier<T> with RxMixin<T> {
   RxInterface(T value) : super(value);
+}
+
+class Rx<T> extends RxInterface<T> {
+  Rx(T value) : super(value);
 }
 
 mixin RxMixin<T> on ValueNotifier<T> {
@@ -23,13 +26,7 @@ mixin RxMixin<T> on ValueNotifier<T> {
   void update(T Function(T value) fn) {
     value = fn(super.value);
   }
-}
 
-class Rx<T> extends RxInterface<T> with RxMixin<T>, RxNotifierMixin<T> {
-  Rx(T value) : super(value);
-}
-
-mixin RxNotifierMixin<T> on ValueNotifier<T> {
   final Map<Stream, StreamSubscription> _subscriptions = {};
 
   final _listeners = <VoidCallback>[];
@@ -39,6 +36,7 @@ mixin RxNotifierMixin<T> on ValueNotifier<T> {
   @override
   void addListener(VoidCallback listener) {
     _listeners.add(listener);
+    // super._lis
     super.addListener(listener);
   }
 
@@ -47,6 +45,9 @@ mixin RxNotifierMixin<T> on ValueNotifier<T> {
     super.removeListener(listener);
     _listeners.remove(listener);
   }
+
+  @visibleForTesting
+  int get lengthOfListeners => _listeners.length;
 
   void addValueListener(ValueChanged<T> listener) {
     if (!_valueListeners.containsKey(listener)) {

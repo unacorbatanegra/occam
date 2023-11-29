@@ -38,7 +38,7 @@ void main() {
     });
     testWidgets('Lyfecicle listeners', (tester) async {
       expect(notifier.hasListeners, false);
-
+      expect(notifier.lengthOfListeners, 0);
       await tester.pumpWidget(
         MaterialApp(
           home: RxWidget(
@@ -53,7 +53,9 @@ void main() {
           ),
         ),
       );
+
       expect(notifier.hasListeners, true);
+      expect(notifier.lengthOfListeners, 1);
       expect(find.text('1'), findsOneWidget);
       await tester.tap(find.byKey(const Key('button')));
       await tester.pump();
@@ -61,6 +63,7 @@ void main() {
       expect(find.text('1'), findsNothing);
       await tester.pumpWidget(Container());
       expect(notifier.hasListeners, false);
+      expect(notifier.lengthOfListeners, 0);
     });
   });
 }

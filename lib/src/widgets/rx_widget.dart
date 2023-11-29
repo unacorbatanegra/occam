@@ -16,6 +16,7 @@ class RxWidget<T> extends StatefulWidget {
 
 class _RxWidgetState<T> extends State<RxWidget<T>> {
   late T value;
+
   @override
   void initState() {
     super.initState();
