@@ -1,6 +1,6 @@
 name: occam
 description: Minimalist state managment
-version: 1.0.0
+version: 1.0.1
 homepage: https://github.com/unacorbatanegra/occam
 
 # current flutter version 3.10.5
