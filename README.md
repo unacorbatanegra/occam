@@ -1,9 +1,13 @@
+<!-- 
+<p>
+<a href="https://github.com/rrousselGit/riverpod/actions"><img src="https://github.com/rrousselGit/riverpod/workflows/Build/badge.svg" alt="Build Status"></a>
+</p> -->
+
 # Occam
 
 Simple state manager based on native fluter stateful for my personal use.
 
 Credits to: @roipeker
-
 
 ## Index
 

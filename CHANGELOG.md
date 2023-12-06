@@ -1,6 +1,7 @@
-## 0.0.1
+## 1.0.1
 
-* TODO: Describe initial release.
+- Test added
+- `Fix` remove double calling in mixin on listeners.
 
 ## 1.0.0
 

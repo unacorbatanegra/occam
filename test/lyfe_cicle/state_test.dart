@@ -30,7 +30,6 @@ void main() {
   );
 }
 
-// @GenerateNiceMocks([MockSpec<MyPageController>()])
 class MyPageController extends StateController {
   final counter = 1.rx;
 

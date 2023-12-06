@@ -45,7 +45,6 @@ class ParentStateElement<T extends StateController> extends StatelessElement {
   @override
   void unmount() {
     _justMounted = false;
-    // _otherState.removeDependant(this);
     super.unmount();
   }
 

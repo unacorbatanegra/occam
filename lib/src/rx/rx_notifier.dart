@@ -36,7 +36,6 @@ mixin RxMixin<T> on ValueNotifier<T> {
   @override
   void addListener(VoidCallback listener) {
     _listeners.add(listener);
-    // super._lis
     super.addListener(listener);
   }
 
