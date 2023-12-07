@@ -1,3 +1,8 @@
+## 1.0.2
+
+- Test added
+- `onDispose` method added in state controller allowing attach a local `cancelToken` and handling it disposed correctly.
+
 ## 1.0.1
 
 - Test added

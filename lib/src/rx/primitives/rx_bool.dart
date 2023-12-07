@@ -1,6 +1,6 @@
 part of occam;
 
-class RxBool extends RxInterface<bool> {
+class RxBool extends _RxInterface<bool> {
   RxBool(bool value) : super(value);
 
   /// The logical conjunction ("and") of this and [other].

@@ -1,6 +1,6 @@
 part of occam;
 
-class RxList<T> extends RxInterface<List<T>> with ListMixin<T> {
+class RxList<T> extends _RxInterface<List<T>> with ListMixin<T> {
   RxList([List<T> value = const []]) : super(value);
 
   @override

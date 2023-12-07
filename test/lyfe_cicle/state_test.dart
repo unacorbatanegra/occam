@@ -3,21 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:occam/occam.dart';
 
-// class MockMyPageController extends Mock implements MyPageController {}
-
 void main() {
   testWidgets(
     "Navigation",
     (tester) async {
-      // final controller = MockMyPageController();
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: MyPage(),
-        ),
-      );
-
-      // controller.onPressed();
-      // verify(controller.onPressed());
+      await tester.pumpWidget(const MaterialApp(home: MyPage()));
       expect(find.byKey(const Key("rx")), findsOneWidget);
       final button = find.byType(TextButton);
       expect(find.text("1"), findsOneWidget);
@@ -25,7 +15,6 @@ void main() {
       await tester.tap(button);
       await tester.pump();
       expect(find.text("2"), findsOneWidget);
-      // verify(controller.onPressed()).called(1);
     },
   );
 }
