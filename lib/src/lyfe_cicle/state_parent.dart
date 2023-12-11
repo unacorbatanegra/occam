@@ -19,11 +19,10 @@ mixin ParentStateMixin<T extends StateController> on StatelessWidget {
 }
 
 class ParentStateElement<T extends StateController> extends StatelessElement {
-  late T _otherState;
-
   ParentStateElement(StatelessWidget widget) : super(widget) {
     StateElement._elements[widget] = this;
   }
+  late T _otherState;
 
   bool _justMounted = true;
 

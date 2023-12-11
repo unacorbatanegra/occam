@@ -42,5 +42,8 @@ class _RxWidgetState<T> extends State<RxWidget<T>> {
     super.dispose();
   }
 
-  void _update() => setState(() => value = widget.notifier.value);
+  void _update() {
+    if (!mounted) return;
+    setState(() => value = widget.notifier.value);
+  }
 }

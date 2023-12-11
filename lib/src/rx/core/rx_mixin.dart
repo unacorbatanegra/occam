@@ -89,22 +89,25 @@ mixin RxMixin<T> on ValueNotifier<T> {
   void dispose() {
     _disposed = true;
 
-    for (final listener in _listeners ?? <VoidCallback>[]) {
+    _listeners ??= [];
+    for (final listener in _listeners!) {
       removeListener(listener);
     }
     _listeners = null;
-    for (final listener in _valueListeners?.entries ??
-        <ValueChanged<T>, VoidCallback>{}.entries) {
+
+    _valueListeners ??= {};
+    for (final listener in _valueListeners!.entries) {
       removeValueListener(listener.key);
     }
-    _listeners = null;
+    _valueListeners = null;
 
-    for (final subscription
-        in (_subscriptions?.values ?? <StreamSubscription>[])) {
-      subscription.cancel();
+    _subscriptions ??= {};
+    for (final subscription in _subscriptions!.entries) {
+      subscription.value.cancel();
     }
     _subscriptions?.clear();
     _subscriptions = null;
+
     super.dispose();
   }
 }

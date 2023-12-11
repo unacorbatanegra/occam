@@ -9,8 +9,6 @@ import 'package:occam/occam.dart';
 class _TestController extends StateController {
   final list = <int>[].rx;
 
-  _TestController();
-
   @override
   void readyState() {
     Timer? timer;

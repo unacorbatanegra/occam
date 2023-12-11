@@ -30,6 +30,7 @@ class StateController<T extends StateWidget> extends State<T> {
   @override
   void dispose() {
     if (OccamDebug.debug) print('$this disposed');
+
     for (final callBack in _onDispose ?? <Function?>[]) {
       callBack?.call();
     }
