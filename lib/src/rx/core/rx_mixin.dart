@@ -2,7 +2,7 @@ part of occam;
 
 mixin RxMixin<T> on ValueNotifier<T> {
   T call([T? newValue]) {
-    if (newValue != null && newValue != value) {
+    if (newValue != null) {
       value = newValue;
     }
     return value;
@@ -27,22 +27,26 @@ mixin RxMixin<T> on ValueNotifier<T> {
 
   @override
   void addListener(VoidCallback listener) {
-    _listeners ??= [];
-    _listeners?.add(listener);
+    if (_listeners == null) {
+      _listeners = [];
+    }
+    _listeners!.add(listener);
     super.addListener(listener);
   }
 
   @override
   void removeListener(VoidCallback listener) {
     super.removeListener(listener);
-    _listeners?.remove(listener);
+    _listeners!.remove(listener);
   }
 
   @visibleForTesting
-  int get lengthOfListeners => _listeners?.length ?? 0;
+  int get lengthOfListeners => _listeners!.length;
 
   void addValueListener(ValueChanged<T> listener) {
-    _valueListeners ??= {};
+    if (_valueListeners == null) {
+      _valueListeners = {};
+    }
     if (!_valueListeners!.containsKey(listener)) {
       _valueListeners![listener] = () => listener(value);
       addListener(_valueListeners![listener]!);
@@ -59,19 +63,21 @@ mixin RxMixin<T> on ValueNotifier<T> {
   }
 
   FutureOr closeStream(Stream<T> stream) {
-    if (_subscriptions?.containsKey(stream) ?? false) {
-      return _subscriptions?.remove(stream)?.cancel();
+    if (_subscriptions!.containsKey(stream)) {
+      return _subscriptions!.remove(stream)!.cancel();
     }
   }
 
   void bindStream(Stream<T> stream) {
-    _subscriptions ??= {};
+    if (_subscriptions == null) {
+      _subscriptions = {};
+    }
     late StreamSubscription subscription;
     subscription = stream.asBroadcastStream().listen(
       (event) => value = event,
       onDone: () {
         subscription.cancel();
-        _subscriptions?.remove(subscription);
+        _subscriptions!.remove(subscription);
       },
     );
     _subscriptions![stream] = subscription;
@@ -81,33 +87,7 @@ mixin RxMixin<T> on ValueNotifier<T> {
   bool _disposed = false;
 
   @override
-  bool get hasListeners => _listeners?.isNotEmpty ?? false;
+  bool get hasListeners => _listeners!.isNotEmpty;
 
   bool get disposed => _disposed;
-
-  @override
-  void dispose() {
-    _disposed = true;
-
-    _listeners ??= [];
-    for (final listener in _listeners!) {
-      removeListener(listener);
-    }
-    _listeners = null;
-
-    _valueListeners ??= {};
-    for (final listener in _valueListeners!.entries) {
-      removeValueListener(listener.key);
-    }
-    _valueListeners = null;
-
-    _subscriptions ??= {};
-    for (final subscription in _subscriptions!.entries) {
-      subscription.value.cancel();
-    }
-    _subscriptions?.clear();
-    _subscriptions = null;
-
-    super.dispose();
-  }
 }

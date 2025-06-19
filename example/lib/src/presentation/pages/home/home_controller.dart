@@ -4,7 +4,6 @@ class HomeController extends StateController {
   String customVar = 'unacorbatanegra';
   final counter = 1.rx;
 
-  final model = Rx<Model>(Model(age: '20', name: 'Nico'));
   @override
   void initState() {
     super.initState();
@@ -32,17 +31,6 @@ class HomeController extends StateController {
 
   void onButton() => counter.value++;
 
-  void onTap() {
-    model.value.name = 'unacorbatanegra';
-    model.refresh();
-  }
-
-  @override
-  void dispose() {
-    counter.dispose();
-    super.dispose();
-  }
-
   void onTestStateless() {
     print(this);
   }
@@ -50,16 +38,4 @@ class HomeController extends StateController {
   void toBottom() {
     navigator.pushNamed('/bottom');
   }
-}
-
-class Model {
-  String name;
-  String age;
-  Model({
-    required this.name,
-    required this.age,
-  });
-
-  @override
-  String toString() => name;
 }
