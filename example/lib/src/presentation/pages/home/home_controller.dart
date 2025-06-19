@@ -12,11 +12,6 @@ class HomeController extends StateController {
     super.initState();
   }
 
-  @override
-  void readyState() async {
-    // WidgetsBinding.instance!.addObserver(this);
-  }
-
   void toSecondPage() async {
     final result = await navigator.pushNamed(
       '/secondPage',
@@ -25,23 +20,12 @@ class HomeController extends StateController {
     print(result);
   }
 
-  // @override
-  // void didChangeAppLifecycleState(AppLifecycleState state) {
-
-  //   print(state);
-  //   super.didChangeAppLifecycleState(state);
-  // }
-
   void onButton() => counter.value++;
 
   void onTap() {
     model.value.name = 'unacorbatanegra';
     model.refresh();
   }
-
-  String get combinedMessage => isSwitched.value && counter.value % 2 == 0
-      ? 'Switch is ON and counter is even!'
-      : '';
 
   void toggleSwitch() => isSwitched.toggle();
 

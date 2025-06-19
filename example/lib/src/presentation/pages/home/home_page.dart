@@ -50,15 +50,7 @@ class HomePage extends StateWidget<HomeController> {
               onChanged: (_) => state.toggleSwitch(),
             ),
           ),
-          RxWidget<String>(
-            notifier: state.combinedMessage.rx,
-            builder: (ctx, msg) => msg.isNotEmpty
-                ? Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(msg, style: TextStyle(color: Colors.green)),
-                  )
-                : SizedBox.shrink(),
-          ),
+        
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
