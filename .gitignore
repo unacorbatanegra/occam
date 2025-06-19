@@ -30,7 +30,9 @@ build/
 .pub-cache/
 .pub/
 build/
+.fvmrc
 
+pubspec.lock
 # Android related
 **/android/**/gradle-wrapper.jar
 **/android/.gradle

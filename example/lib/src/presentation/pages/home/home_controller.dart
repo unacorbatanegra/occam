@@ -3,6 +3,8 @@ import 'package:occam/occam.dart';
 class HomeController extends StateController {
   String customVar = 'unacorbatanegra';
   final counter = 1.rx;
+  final isSwitched = false.rx;
+  final items = <String>[].rx;
 
   final model = Rx<Model>(Model(age: '20', name: 'Nico'));
   @override
@@ -37,9 +39,25 @@ class HomeController extends StateController {
     model.refresh();
   }
 
+  String get combinedMessage => isSwitched.value && counter.value % 2 == 0
+      ? 'Switch is ON and counter is even!'
+      : '';
+
+  void toggleSwitch() => isSwitched.toggle();
+
+  void addItem() {
+    items.add('Item [${items.length + 1}]');
+  }
+
+  void removeItem() {
+    if (items.isNotEmpty) items.removeLast();
+  }
+
   @override
   void dispose() {
     counter.dispose();
+    isSwitched.dispose();
+    items.dispose();
     super.dispose();
   }
 

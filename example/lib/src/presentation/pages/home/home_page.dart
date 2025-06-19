@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:occam/occam.dart';
 
 import 'home_controller.dart';
+import 'nested/nested_child.dart';
+import 'widgets/child_consumer.dart';
 
 class HomePage extends StateWidget<HomeController> {
   const HomePage({Key? key}) : super(key: key);
@@ -40,9 +42,61 @@ class HomePage extends StateWidget<HomeController> {
             child: Text('Change reactive'),
             onPressed: state.onTap,
           ),
-          // // ValueListenableBuilder(valueListenable: valueListenable, builder: builder)
-          // const ChildConsumer(),
-          // const NestedChild(),
+          RxWidget<bool>(
+            notifier: state.isSwitched,
+            builder: (ctx, value) => SwitchListTile(
+              title: Text('RxBool Switch'),
+              value: value,
+              onChanged: (_) => state.toggleSwitch(),
+            ),
+          ),
+          RxWidget<String>(
+            notifier: state.combinedMessage.rx,
+            builder: (ctx, msg) => msg.isNotEmpty
+                ? Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(msg, style: TextStyle(color: Colors.green)),
+                  )
+                : SizedBox.shrink(),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: state.addItem,
+                child: Text('Add Item'),
+              ),
+              SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: state.removeItem,
+                child: Text('Remove Item'),
+              ),
+            ],
+          ),
+          SizedBox(
+            height: 100,
+            child: RxWidget<List<String>>(
+              notifier: state.items,
+              builder: (ctx, items) => ListView.builder(
+                itemCount: items.length,
+                itemBuilder: (ctx, idx) => ListTile(
+                  title: Text(items[idx]),
+                ),
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              state.model.value.name = 'Updated Name';
+              state.model.value.age =
+                  (int.parse(state.model.value.age) + 1).toString();
+              state.model.refresh();
+            },
+            child: Text('Update Model'),
+          ),
+          // ValueListenableBuilder(valueListenable: valueListenable, builder: builder)
+          const ChildConsumer(),
+          const NestedChild(),
           Center(
             child: ElevatedButton(
               onPressed: state.toSecondPage,
