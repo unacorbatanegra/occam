@@ -27,6 +27,8 @@ class HomeController extends StateController {
     model.refresh();
   }
 
+  String get apiKey => "cashea_ssj2fk33k4bjk323f";
+
   void toggleSwitch() => isSwitched.toggle();
 
   void addItem() {
