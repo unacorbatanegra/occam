@@ -1,8 +1,12 @@
-/// Support for doing something awesome.
-///
-/// More dartdocs go here.
-library;
+import 'package:custom_lint_builder/custom_lint_builder.dart';
 
-export 'src/occam_linter_base.dart';
+import 'src/rx_disposal_rule.dart';
 
-// TODO: Export any libraries intended for clients of this package.
+PluginBase createPlugin() => _OccamLinterPlugin();
+
+class _OccamLinterPlugin extends PluginBase {
+  @override
+  List<LintRule> getLintRules(CustomLintConfigs configs) => [
+        RxDisposalRule(),
+      ];
+}

@@ -25,6 +25,7 @@ class SecondController extends StateController {
 
   @override
   void dispose() {
+    list.dispose();
     counter.dispose();
     notifier.dispose();
     super.dispose();

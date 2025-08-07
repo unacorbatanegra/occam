@@ -1,6 +1,13 @@
-import 'package:occam_linter/occam_linter.dart';
+import 'package:occam/occam.dart';
 
-void main() {
-  var awesome = Awesome();
-  print('awesome: ${awesome.isAwesome}');
+class HomeController extends StateController {
+  final counter = 0.rx; // ⚠️ Rx variable 'counter' must be disposed
+  final name = "".rx; // ⚠️ Rx variable 'name' must be disposed
+  final items = <String>[].rx; // ✓ OK - disposed properly
+
+  @override
+  void dispose() {
+    items.dispose();
+    super.dispose();
+  }
 }

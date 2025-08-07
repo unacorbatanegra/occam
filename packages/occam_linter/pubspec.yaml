@@ -1,15 +1,15 @@
 name: occam_linter
-description: A starting point for Dart libraries or applications.
+description: Custom linter rules for Occam state management library
 version: 1.0.0
-# repository: https://github.com/my_org/my_repo
 
 environment:
-  sdk: ^3.8.1
+  sdk: 3.8.1
 
-# Add regular dependencies here.
 dependencies:
-  # path: ^1.8.0
-
+  analyzer: ^6.0.0
+  custom_lint_builder: ^0.6.0
+  
 dev_dependencies:
-  lints: ^5.0.0
   test: ^1.24.0
+  occam:
+    path: ../occam

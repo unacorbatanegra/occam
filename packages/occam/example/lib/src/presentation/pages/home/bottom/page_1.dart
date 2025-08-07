@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:occam/occam.dart';
 
 class Page1 extends StateWidget<Page1Controller> {
-  const Page1({Key? key}) : super(key: key);
+  const Page1({super.key});
 
   @override
   Page1Controller createState() => Page1Controller();
