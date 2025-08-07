@@ -1,89 +1,146 @@
-<!-- 
-<p>
-<a href="https://github.com/rrousselGit/riverpod/actions"><img src="https://github.com/rrousselGit/riverpod/workflows/Build/badge.svg" alt="Build Status"></a>
-</p> -->
-
 # Occam
 
-Simple state manager based on native fluter stateful for my personal use.
+[![Flutter](https://img.shields.io/badge/Flutter-3.32.7-blue.svg)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-3.8.1-blue.svg)](https://dart.dev)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Credits to: @roipeker
+A minimalist Flutter state management ecosystem that provides clean architecture with reactive state management.
 
-## Index
+## 🎯 Overview
 
-- [Why another state manager?](#why)
-- [State Manager](#state-manager)
-- [Rx Types](#rx-types)
+Occam is a Flutter state management solution built on the principle of **1 View = 1 Controller**. It offers a simple, safe, and maintainable approach to state management with automatic disposal and reactive UI updates.
 
+### Core Philosophy
 
-## Why
+- **Simple**: Minimal API with only essential features
+- **Clean Architecture**: Strict separation between View (UI) and Controller (Logic)
+- **Safe**: Automatic disposal of reactive variables to prevent memory leaks
+- **Reactive**: Built-in reactive types that automatically update UI when values change
 
-When I started coding Flutter there were a lots of state managers and was hard to choose between them because I like some features of each of one.
+## 📦 Packages
 
-Also as a package get bigger there's a lot of unnused code or features that become part of a project unnecesarily, so the result is a project with a lot of pieces of code recreating the wheel.
+This repository contains the following packages:
 
-The purpose of this package is to be as simple as posible and provide an easy and safety way to developers create his applications quickily and also easily maintanable by providing only one way to handle:
+### 🎮 [occam](packages/occam/) - Core State Management Library
 
-* View
-* Controller
+The main state management library providing:
 
-The premisse is to have 
+- **StateWidget**: Base class for UI components with 1:1 controller relationship
+- **StateController**: Base class for logic with lifecycle management
+- **Reactive Types**: `Rx<T>`, `RxBool`, `RxList<T>` with automatic UI updates
+- **RxWidget**: Widget that rebuilds when reactive values change
+- **Navigation Utilities**: Simplified navigation with `navigator` and `navArgs`
 
-    1 view = 1 controller
-
-View have only widgets withouth logic unless is a UI logic
-and controllers have no widgets.
-
-The result is a clean UI file and a clean logic file.
-
-The `RxTypes` are a refactor that follows the GetX pattern to create reactives types, but without the `Obs` widget.
-`Obs` widget made usafe dispose correctly rx types sinces there's not a explicit declaration and remove over the listeners attached to a `RxType`.
-
-> This package is for my personal use and it could change the API over the time.
-
-
-
-## Usage
-
-```dart 
+```dart
 class HomePage extends StateWidget<HomeController> {
   const HomePage({Key? key}) : super(key: key);
-  /// You can override this and pass your own providers
+
   @override
   HomeController createState() => HomeController();
 
   @override
   Widget build(BuildContext context) {
-       return Scaffold(
-      appBar: AppBar(
-        title: const Text('Occam Demo'),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: state.onButton,
-        child: const Icon(Icons.add),
-      ),
+    return Scaffold(
       body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           RxWidget<int>(
             notifier: state.counter,
-            builder: (ctx, v) => Text('reactive $v'),
+            builder: (context, value) => Text('Count: $value'),
           ),
-          RxWidget<Model>(
-            notifier: state.model,
-            builder: (ctx, v) => Text('reactive $v'),
+          ElevatedButton(
+            onPressed: state.incrementCounter,
+            child: Text('Increment'),
           ),
-          Center(
-            child: ElevatedButton(
-              onPressed: state.toSecondPage,
-              child: const Text('To Second page'),
-            ),
+        ],
+      ),
+    );
+  }
+}
+
+class HomeController extends StateController {
+  final counter = 0.rx;
+  
+  void incrementCounter() {
+    counter.value++;
+  }
+  
+  @override
+  void dispose() {
+    counter.dispose();
+    super.dispose();
+  }
+}
+```
+
+### 🔧 [occam_linter](packages/occam_linter/) - Linting Rules
+
+Custom linting rules to enforce Occam best practices and patterns.
+
+## 🚀 Quick Start
+
+### Installation
+
+Add Occam to your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  occam: ^1.0.2
+```
+
+### Basic Usage
+
+1. **Create a Controller**:
+
+```dart
+class UserController extends StateController {
+  final userName = "".rx;
+  final userPosts = <String>[].rx;
+  
+  @override
+  void readyState() async {
+    await loadUserData();
+  }
+  
+  Future<void> loadUserData() async {
+    userName.value = "John Doe";
+    userPosts.assignAll(["Post 1", "Post 2"]);
+  }
+  
+  @override
+  void dispose() {
+    userName.dispose();
+    userPosts.dispose();
+    super.dispose();
+  }
+}
+```
+
+2. **Create a View**:
+
+```dart
+class UserPage extends StateWidget<UserController> {
+  const UserPage({Key? key}) : super(key: key);
+
+  @override
+  UserController createState() => UserController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('User Profile')),
+      body: Column(
+        children: [
+          RxWidget<String>(
+            notifier: state.userName,
+            builder: (context, name) => Text('Hello $name'),
           ),
-          Center(
-            child: ElevatedButton(
-              onPressed: state.toBottom,
-              child: const Text('To Bottom'),
+          RxWidget<List<String>>(
+            notifier: state.userPosts,
+            builder: (context, posts) => ListView.builder(
+              itemCount: posts.length,
+              itemBuilder: (context, index) => ListTile(
+                title: Text(posts[index]),
+              ),
             ),
           ),
         ],
@@ -91,36 +148,103 @@ class HomePage extends StateWidget<HomeController> {
     );
   }
 }
-class HomeController extends StateController{
+```
 
-    final counter=1.rx;
+## 🛠️ Development
 
-    @override
-    void initState() {
-        //Executed when the widget is mounted
-        super.initState();
-    }
-    @override
-    void readyState() async {
-        /// Is executed after the widget is mounted but with context safe,
-        /// Here you can safely call:
-        final arguments =ModalRoute.of(context)?.settings.arguments;
-    }
-    void onButton() {
-        counter.value++;
-    }
-    void toSecondPage() async {
-        final result = await navigator.pushNamed(
-        '/secondPage',
-        arguments: 'test arguments',
-        );
-    }
-    @override
-    void dispose() {
-        counter.dispose();
-        super.dispose();
-    }
-  }    
-}
+This project uses [Melos](https://melos.invertase.dev/) for monorepo management.
+
+### Prerequisites
+
+- Flutter 3.32.7
+- Dart 3.8.1
+- Melos
+
+### Setup
+
+1. **Install Melos**:
+```bash
+dart pub global activate melos
+```
+
+2. **Install dependencies**:
+```bash
+melos bootstrap
+```
+
+3. **Set Flutter version**:
+```bash
+melos run set
+```
+
+### Available Scripts
+
+- `melos run analyze` - Run static analysis
+- `melos run get` - Get dependencies for all packages
+- `melos run set` - Set Flutter version
+
+### Project Structure
 
 ```
+occam/
+├── packages/
+│   ├── occam/           # Core state management library
+│   └── occam_linter/    # Custom linting rules
+├── melos.yaml          # Monorepo configuration
+└── README.md           # This file
+```
+
+## 📚 Key Features
+
+### Reactive Types
+
+- **Rx<T>**: Generic reactive wrapper with callable syntax
+- **RxBool**: Specialized boolean with toggle and logical operators
+- **RxList<T>**: Reactive list with automatic UI updates
+
+### Lifecycle Management
+
+- **initState()**: Called when widget mounts
+- **readyState()**: Called after mount with safe context access
+- **dispose()**: Automatic cleanup of reactive variables
+
+### Navigation Utilities
+
+- **navigator**: Direct access to Navigator
+- **navArgs**: Access to route arguments
+
+### Advanced Features
+
+- **Stream Binding**: Automatic subscription management
+- **Value Listeners**: Callbacks for value changes
+- **Disposal Callbacks**: Register cleanup functions
+
+## 🎨 Best Practices
+
+1. **Always dispose reactive variables** in controller's `dispose()` method
+2. **Use 1:1 relationship** - One view per controller
+3. **Keep controllers logic-free** - No UI widgets in controllers
+4. **Keep views widget-only** - No business logic in views
+5. **Use reactive types** for state that needs UI updates
+6. **Leverage readyState()** for context-safe initialization
+
+## 📖 Documentation
+
+- [Occam Core Package](packages/occam/README.md) - Detailed documentation for the main library
+- [Occam Linter Package](packages/occam_linter/README.md) - Linting rules documentation
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](packages/occam/LICENSE) file for details.
+
+## 🙏 Credits
+
+Credits to: @roipeker for the original inspiration.
+
+---
+
+**Note**: This package is primarily for personal use and the API may change over time. 
