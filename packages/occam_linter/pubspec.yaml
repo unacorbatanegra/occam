@@ -1,0 +1,15 @@
+name: occam_linter
+description: Custom linter rules for Occam state management library
+version: 1.0.0
+
+environment:
+  sdk: 3.8.1
+
+dependencies:
+  analyzer: ^6.0.0
+  custom_lint_builder: ^0.6.0
+  
+dev_dependencies:
+  test: ^1.24.0
+  occam:
+    path: ../occam

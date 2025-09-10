@@ -1,0 +1,14 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  plugins:
+    - custom_lint
+  
+
+custom_lint:
+  rules:
+    - dispose_rx_variables: true
+
+linter:
+  rules:
+    
