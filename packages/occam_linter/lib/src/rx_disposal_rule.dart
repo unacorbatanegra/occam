@@ -107,14 +107,17 @@ class _RxDisposalChecker {
     final disposed = <String>{};
 
     // Find dispose method
-    final disposeMethod =
-        node.members.whereType<MethodDeclaration>().firstWhere(
-              (method) => method.name.lexeme == 'dispose',
-              orElse: () => throw StateError('No dispose method found'),
-            );
+    final disposeMethods = node.members.whereType<MethodDeclaration>().where(
+          (method) => method.name.lexeme == 'dispose',
+        );
+
+    // If no dispose method found, return empty set
+    if (disposeMethods.isEmpty) {
+      return disposed;
+    }
 
     // Visit dispose method to find disposed fields
-    disposeMethod.accept(_DisposeCallVisitor(disposed));
+    disposeMethods.first.accept(_DisposeCallVisitor(disposed));
 
     return disposed;
   }

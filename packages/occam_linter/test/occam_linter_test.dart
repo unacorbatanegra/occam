@@ -269,11 +269,28 @@ class RxList<T> {
 
       final errors = await _getLintErrors(code, rule);
 
+      // Debug output
+      print('Found ${errors.length} errors:');
+      for (final error in errors) {
+        print('  - ${error.message}');
+      }
+
       expect(errors, hasLength(3));
-      expect(errors.any((e) => e.message.contains('counter')), isTrue);
-      expect(errors.any((e) => e.message.contains('isLoading')), isTrue);
-      expect(errors.any((e) => e.message.contains('items')), isTrue);
-      expect(errors.every((e) => !e.message.contains('disposed')), isTrue);
+      
+      final hasCounter = errors.any((e) => e.message.contains('counter'));
+      final hasIsLoading = errors.any((e) => e.message.contains('isLoading'));
+      final hasItems = errors.any((e) => e.message.contains('items'));
+      final noDisposed = errors.every((e) => !e.message.contains(' disposed '));
+
+      print('hasCounter: $hasCounter');
+      print('hasIsLoading: $hasIsLoading');
+      print('hasItems: $hasItems');
+      print('noDisposed: $noDisposed');
+
+      expect(hasCounter, isTrue);
+      expect(hasIsLoading, isTrue);
+      expect(hasItems, isTrue);
+      expect(noDisposed, isTrue);
     });
 
     test('handles nested dispose calls', () async {
