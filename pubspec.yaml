@@ -1,13 +1,10 @@
 name: occam
 description: Minimalist state managment
-version: 1.0.2
+version: 1.0.3
 homepage: https://github.com/unacorbatanegra/occam
-
-# current flutter version 3.10.5
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
-  # flutter: ">=3..0"
 
 dependencies:
   flutter:
@@ -21,8 +18,8 @@ dev_dependencies:
   flutter_lints: ^1.0.0
   build_runner: ^2.4.6
   test_cov_console: ^0.2.2
-  # http: ^1.1.0
-  # dio: ^5.4.0
-  # http_mock_adapter: ^0.6.1
+  
   
 flutter:
+  uses-material-design: true
+ 
