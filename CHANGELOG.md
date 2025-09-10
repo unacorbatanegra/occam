@@ -1,3 +1,7 @@
+## 1.0.3
+
+- Update the readme
+
 ## 1.0.2
 
 - Test added
