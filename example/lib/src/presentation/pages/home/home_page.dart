@@ -21,8 +21,6 @@ class HomePage extends StateWidget<HomeController> {
         child: const Icon(Icons.add),
       ),
       body: Column(
-        // mainAxisAlignment: MainAxisAlignment.center,
-        // crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Center(
             child: RxWidget<int>(
@@ -40,23 +38,18 @@ class HomePage extends StateWidget<HomeController> {
             child: Text('Change reactive'),
             onPressed: state.onTap,
           ),
-          // // ValueListenableBuilder(valueListenable: valueListenable, builder: builder)
-          // const ChildConsumer(),
-          // const NestedChild(),
+       
           Center(
             child: ElevatedButton(
               onPressed: state.toSecondPage,
               child: const Text('To Second page'),
             ),
           ),
-          // Center(
-          //   child: ElevatedButton(
-          //     onPressed: state.toBottom,
-          //     child: const Text('To Bottom'),
-          //   ),
-          // ),
+          
         ],
       ),
     );
   }
 }
+
+
