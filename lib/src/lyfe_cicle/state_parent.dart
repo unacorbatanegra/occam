@@ -44,6 +44,7 @@ class ParentStateElement<T extends StateController> extends StatelessElement {
   @override
   void unmount() {
     _justMounted = false;
+    StateElement._elements[widget] = null;
     super.unmount();
   }
 

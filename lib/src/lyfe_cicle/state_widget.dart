@@ -5,14 +5,7 @@ abstract class StateWidget<T extends State> extends StatefulWidget {
 
   Widget build(BuildContext context);
 
-  T get state {
-    final s = StateElement._elements[this];
-    assert(s != null, 'State accessed before widget mounted');
-    if (s == null) {
-      throw StateError('State accessed before widget mounted');
-    }
-    return s as T;
-  }
+  T get state => StateElement._stateOf(this);
 
   @override
   StateElement createElement() => StateElement(this);
@@ -22,12 +15,14 @@ abstract class StateWidget<T extends State> extends StatefulWidget {
 }
 
 class StateElement extends StatefulElement {
-  static final _elements = Expando('State Controllers');
+  static final _elements = Expando<Element>('State Elements');
 
   bool _justMounted = true;
+  State<StatefulWidget>? _cachedState;
 
   StateElement(StateWidget widget) : super(widget) {
-    _elements[widget] = state;
+    _cachedState = state;
+    _elements[widget] = this;
   }
 
   @override
@@ -40,12 +35,16 @@ class StateElement extends StatefulElement {
   void unmount() {
     _justMounted = false;
     _elements[widget] = null;
+    _cachedState = null;
     super.unmount();
   }
 
   @override
   void update(StatefulWidget newWidget) {
-    _elements[newWidget] = state;
+    _cachedState = state;
+    assert(newWidget is StateWidget,
+        'StateElement can only be updated with another StateWidget');
+    _elements[newWidget as StateWidget] = this;
     super.update(newWidget);
   }
 
@@ -68,4 +67,20 @@ class StateElement extends StatefulElement {
 
   @override
   Widget build() => widget.build(this);
+
+  static T _stateOf<T extends State>(StateWidget<T> widget) {
+    final element = _elements[widget];
+    assert(element != null && element is StateElement,
+        'State accessed before widget mounted');
+    if (element == null || element is! StateElement) {
+      throw StateError('State accessed before widget mounted');
+    }
+    final cached = element._cachedState;
+    if (cached == null) {
+      final currentState = element.state;
+      element._cachedState = currentState;
+      return currentState as T;
+    }
+    return cached as T;
+  }
 }
