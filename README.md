@@ -132,6 +132,26 @@ RxWidget<int>(
 - ✅ **Safe**: Explicit disposal prevents memory leaks
 - ✅ **Minimal**: No unnecessary features
 
+## Example Catalog
+
+Occam ships with a Flutter example app that catalogues the framework's building
+blocks. To explore it locally:
+
+```bash
+flutter run example
+```
+
+Every entry in the catalog is a `StateWidget`/`StateController` pair that keeps
+UI concerns separate from logic. The current demos cover:
+
+- **Reactive basics** – `Rx<int>`, `RxBool`, and mutable models calling `refresh()`.
+- **ParentState sharing** – Reusing a controller from stateless helper widgets via `ParentStateMixin`.
+- **RxList operations** – Using `assignAll`, `shuffle`, `removeWhere`, and drag-and-drop reordering.
+- **Stream binding** – Bridging `Stream` emissions into reactive values with `bindStream` / `closeStream`.
+
+Use the catalog as a reference implementation or starting point when bringing
+Occam into your own projects.
+
 ## Package Details
 
 ### Dependencies
