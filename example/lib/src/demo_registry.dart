@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'demos/keep_alive/keep_alive_demo_page.dart';
 import 'demos/parent_state/parent_state_demo_page.dart';
 import 'demos/reactive_basics/reactive_basics_page.dart';
 import 'demos/rx_list/rx_list_demo_page.dart';
@@ -60,6 +61,14 @@ class DemoRegistry {
       routeName: StreamBindingPage.routeName,
       builder: (_) => const StreamBindingPage(),
       category: 'Reactivity',
+    ),
+    DemoEntry(
+      title: 'Keep-alive controllers',
+      description:
+          'Use KeepAliveStateMixin to keep scroll positions alive across tab switches.',
+      routeName: KeepAliveDemoPage.routeName,
+      builder: (_) => const KeepAliveDemoPage(),
+      category: 'Lifecycle',
     ),
   ];
 

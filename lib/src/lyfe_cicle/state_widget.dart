@@ -87,7 +87,13 @@ class StateElement extends StatefulElement {
 
   /// Invokes the widget's [StateWidget.build] implementation.
   @override
-  Widget build() => widget.build(this);
+  Widget build() {
+    final currentState = state;
+    if (currentState is StateWidgetBuildMixin) {
+      return currentState.buildWithStateWidget(this);
+    }
+    return widget.build(this);
+  }
 
   /// Returns the state object for the requested [widget].
   static T _stateOf<T extends State>(StateWidget<T> widget) {

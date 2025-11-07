@@ -42,3 +42,18 @@ class StateController<T extends StateWidget> extends State<T> {
     super.dispose();
   }
 }
+
+/// Mixin that allows a [StateController] to intercept the widget build phase.
+///
+/// Controllers that mix in this type can provide an alternate build entry-point
+/// that receives the same [BuildContext] that would otherwise be passed to the
+/// `StateWidget.build` implementation.
+mixin StateWidgetBuildMixin<T extends StateWidget> on StateController<T> {
+  /// Called by the framework when the widget associated with this controller
+  /// should build.
+  ///
+  /// Implementations should return the widget subtree that would normally be
+  /// produced by `widget.build(context)`, optionally wrapping or augmenting it.
+  @protected
+  Widget buildWithStateWidget(BuildContext context);
+}

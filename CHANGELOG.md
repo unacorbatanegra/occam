@@ -1,3 +1,7 @@
+## 1.0.5
+
+- Add `KeepAliveStateMixin`
+
 ## 1.0.4
 
 - Replace the sample app with a catalog of focused demos (reactive basics, ParentState, RxList, and stream binding).

@@ -148,6 +148,7 @@ UI concerns separate from logic. The current demos cover:
 - **ParentState sharing** – Reusing a controller from stateless helper widgets via `ParentStateMixin`.
 - **RxList operations** – Using `assignAll`, `shuffle`, `removeWhere`, and drag-and-drop reordering.
 - **Stream binding** – Bridging `Stream` emissions into reactive values with `bindStream` / `closeStream`.
+- **Keep-alive controllers** – Mixing `KeepAliveStateMixin` into controllers to preserve scroll offsets across tab switches while still letting the controller opt-in or out at runtime.
 
 Use the catalog as a reference implementation or starting point when bringing
 Occam into your own projects.
@@ -164,6 +165,7 @@ Occam into your own projects.
 - **StateController**: Enhanced State class with additional lifecycle methods
 - **Rx Types**: Lightweight reactive primitives with explicit disposal
 - **RxWidget**: Simple widget for listening to reactive changes
+- **KeepAliveStateMixin**: Opt-in lifecycle helper that lets controllers participate in `AutomaticKeepAlive` without touching widget code.
 
 ### Memory Management
 Occam prioritizes memory safety through:
