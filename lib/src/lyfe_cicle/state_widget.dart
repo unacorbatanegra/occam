@@ -32,6 +32,7 @@ class StateElement extends StatefulElement {
   @override
   void unmount() {
     _justMounted = false;
+    _elements[widget] = null;
     super.unmount();
   }
 
