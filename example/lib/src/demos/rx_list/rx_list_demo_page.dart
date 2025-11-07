@@ -77,30 +77,36 @@ class RxListDemoPage extends StateWidget<RxListDemoController> {
                 builder: (context, items) {
                   if (items.isEmpty) {
                     return const Center(
-                      child: Text('Nothing yet – add a few items to get started.'),
+                      child: Text(
+                        'Nothing yet – add a few items to get started.',
+                      ),
                     );
                   }
                   return ReorderableListView.builder(
                     itemCount: items.length,
                     onReorder: state.reorder,
-                    itemBuilder: (context, index) => Dismissible(
-                      key: ValueKey(items[index]),
-                      direction: DismissDirection.endToStart,
-                      onDismissed: (_) => state.removeAt(index),
-                      background: Container(
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        color: Theme.of(context).colorScheme.errorContainer,
-                        child: Icon(
-                          Icons.delete,
-                          color: Theme.of(context).colorScheme.onErrorContainer,
+                    itemBuilder:
+                        (context, index) => Dismissible(
+                          key: ValueKey(items[index]),
+                          direction: DismissDirection.endToStart,
+                          onDismissed: (_) => state.removeAt(index),
+                          background: Container(
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            color: Theme.of(context).colorScheme.errorContainer,
+                            child: Icon(
+                              Icons.delete,
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onErrorContainer,
+                            ),
+                          ),
+                          child: ListTile(
+                            title: Text(items[index]),
+                            leading: const Icon(Icons.drag_indicator),
+                          ),
                         ),
-                      ),
-                      child: ListTile(
-                        title: Text(items[index]),
-                        leading: const Icon(Icons.drag_indicator),
-                      ),
-                    ),
                   );
                 },
               ),
@@ -111,4 +117,3 @@ class RxListDemoPage extends StateWidget<RxListDemoController> {
     );
   }
 }
-

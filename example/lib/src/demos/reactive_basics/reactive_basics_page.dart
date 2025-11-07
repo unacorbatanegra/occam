@@ -14,9 +14,7 @@ class ReactiveBasicsPage extends StateWidget<ReactiveBasicsController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Reactive primitives & models'),
-      ),
+      appBar: AppBar(title: const Text('Reactive primitives & models')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: state.resetCounter,
         icon: const Icon(Icons.refresh),
@@ -27,10 +25,9 @@ class ReactiveBasicsPage extends StateWidget<ReactiveBasicsController> {
         children: [
           RxWidget<String>(
             notifier: state.readyMessage,
-            builder: (context, value) => Text(
-              value,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            builder:
+                (context, value) =>
+                    Text(value, style: Theme.of(context).textTheme.titleMedium),
           ),
           const SizedBox(height: 16),
           _Section(
@@ -40,10 +37,11 @@ class ReactiveBasicsPage extends StateWidget<ReactiveBasicsController> {
               children: [
                 RxWidget<int>(
                   notifier: state.counter,
-                  builder: (context, value) => Text(
-                    'Count: $value',
-                    style: Theme.of(context).textTheme.displaySmall,
-                  ),
+                  builder:
+                      (context, value) => Text(
+                        'Count: $value',
+                        style: Theme.of(context).textTheme.displaySmall,
+                      ),
                 ),
                 const SizedBox(height: 8),
                 Wrap(
@@ -74,16 +72,19 @@ class ReactiveBasicsPage extends StateWidget<ReactiveBasicsController> {
             title: 'RxBool toggles UI state',
             child: RxWidget<bool>(
               notifier: state.notificationsEnabled,
-              builder: (context, value) => SwitchListTile(
-                value: value,
-                title: Text(
-                  value ? 'Notifications are enabled' : 'Notifications are off',
-                ),
-                subtitle: const Text(
-                  'Toggle to see the controller mutating reactive booleans.',
-                ),
-                onChanged: state.toggleNotifications,
-              ),
+              builder:
+                  (context, value) => SwitchListTile(
+                    value: value,
+                    title: Text(
+                      value
+                          ? 'Notifications are enabled'
+                          : 'Notifications are off',
+                    ),
+                    subtitle: const Text(
+                      'Toggle to see the controller mutating reactive booleans.',
+                    ),
+                    onChanged: state.toggleNotifications,
+                  ),
             ),
           ),
           const SizedBox(height: 16),
@@ -94,16 +95,17 @@ class ReactiveBasicsPage extends StateWidget<ReactiveBasicsController> {
               children: [
                 RxWidget<UserProfile>(
                   notifier: state.profile,
-                  builder: (context, profile) => Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Name: ${profile.name}'),
-                      Text('Level: ${profile.level}'),
-                      Text(
-                        'Marketing opt-in: ${profile.marketingOptIn ? 'Yes' : 'No'}',
+                  builder:
+                      (context, profile) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Name: ${profile.name}'),
+                          Text('Level: ${profile.level}'),
+                          Text(
+                            'Marketing opt-in: ${profile.marketingOptIn ? 'Yes' : 'No'}',
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
                 ),
                 const SizedBox(height: 8),
                 Wrap(
@@ -133,10 +135,7 @@ class ReactiveBasicsPage extends StateWidget<ReactiveBasicsController> {
 }
 
 class _Section extends StatelessWidget {
-  const _Section({
-    required this.title,
-    required this.child,
-  });
+  const _Section({required this.title, required this.child});
 
   final String title;
   final Widget child;
@@ -151,10 +150,7 @@ class _Section extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             child,
           ],
@@ -163,4 +159,3 @@ class _Section extends StatelessWidget {
     );
   }
 }
-

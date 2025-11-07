@@ -15,13 +15,13 @@ class OccamExamplesApp extends StatelessWidget {
     return MaterialApp(
       title: 'Occam Examples',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigoAccent.shade400),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.indigoAccent.shade400,
+        ),
         useMaterial3: true,
       ),
       initialRoute: '/',
-      routes: {
-        '/': (ctx) => const CatalogPage(),
-      },
+      routes: {'/': (ctx) => const CatalogPage()},
       onGenerateRoute: DemoRegistry.onGenerateRoute,
     );
   }

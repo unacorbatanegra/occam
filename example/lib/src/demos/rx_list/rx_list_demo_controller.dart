@@ -12,12 +12,7 @@ class RxListDemoController extends StateController<RxListDemoPage> {
   }
 
   void addSampleItems() {
-    items.assignAll(
-      List.generate(
-        5,
-        (index) => 'Sample item ${index + 1}',
-      ),
-    );
+    items.assignAll(List.generate(5, (index) => 'Sample item ${index + 1}'));
   }
 
   void shuffleItems() {
@@ -55,4 +50,3 @@ class RxListDemoController extends StateController<RxListDemoPage> {
     super.dispose();
   }
 }
-

@@ -14,9 +14,7 @@ class ParentStateDemoPage extends StateWidget<ParentStateDemoController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sharing controllers with ParentState'),
-      ),
+      appBar: AppBar(title: const Text('Sharing controllers with ParentState')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -24,10 +22,11 @@ class ParentStateDemoPage extends StateWidget<ParentStateDemoController> {
           children: [
             RxWidget<int>(
               notifier: state.taps,
-              builder: (context, count) => Text(
-                'Actions triggered: $count',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
+              builder:
+                  (context, count) => Text(
+                    'Actions triggered: $count',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
             ),
             const SizedBox(height: 12),
             const Text(
@@ -39,18 +38,9 @@ class ParentStateDemoPage extends StateWidget<ParentStateDemoController> {
               spacing: 12,
               runSpacing: 12,
               children: const [
-                ControllerActionButton(
-                  icon: Icons.play_arrow,
-                  label: 'Start',
-                ),
-                ControllerActionButton(
-                  icon: Icons.pause,
-                  label: 'Pause',
-                ),
-                ControllerActionButton(
-                  icon: Icons.stop,
-                  label: 'Stop',
-                ),
+                ControllerActionButton(icon: Icons.play_arrow, label: 'Start'),
+                ControllerActionButton(icon: Icons.pause, label: 'Pause'),
+                ControllerActionButton(icon: Icons.stop, label: 'Stop'),
                 ControllerActionButton(
                   icon: Icons.fast_forward,
                   label: 'Fast-forward',
@@ -58,9 +48,7 @@ class ParentStateDemoPage extends StateWidget<ParentStateDemoController> {
               ],
             ),
             const SizedBox(height: 24),
-            const Expanded(
-              child: ActivityFeed(),
-            ),
+            const Expanded(child: ActivityFeed()),
           ],
         ),
       ),
@@ -125,17 +113,16 @@ class ActivityFeed extends ParentState<ParentStateDemoController> {
                 notifier: state.history,
                 builder: (context, actions) {
                   if (actions.isEmpty) {
-                    return const Center(
-                      child: Text('No actions yet.'),
-                    );
+                    return const Center(child: Text('No actions yet.'));
                   }
                   return ListView.builder(
                     itemCount: actions.length,
-                    itemBuilder: (context, index) => ListTile(
-                      dense: true,
-                      leading: const Icon(Icons.bolt, size: 18),
-                      title: Text(actions[index]),
-                    ),
+                    itemBuilder:
+                        (context, index) => ListTile(
+                          dense: true,
+                          leading: const Icon(Icons.bolt, size: 18),
+                          title: Text(actions[index]),
+                        ),
                   );
                 },
               ),
@@ -146,4 +133,3 @@ class ActivityFeed extends ParentState<ParentStateDemoController> {
     );
   }
 }
-

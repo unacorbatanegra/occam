@@ -4,11 +4,7 @@ class ReactiveBasicsController extends StateController<ReactiveBasicsPage> {
   final counter = 0.rx;
   final notificationsEnabled = false.rx;
   final readyMessage = ''.rx;
-  final profile = UserProfile(
-    name: 'Alex',
-    level: 1,
-    marketingOptIn: true,
-  ).rx;
+  final profile = UserProfile(name: 'Alex', level: 1, marketingOptIn: true).rx;
 
   final List<String> _names = ['Jordan', 'River', 'Kai', 'Sam', 'Nova'];
   int _currentNameIndex = 0;
@@ -18,7 +14,9 @@ class ReactiveBasicsController extends StateController<ReactiveBasicsPage> {
     super.readyState();
     final args = ModalRoute.of(context)?.settings.arguments;
     final message =
-        (args is String && args.isNotEmpty) ? args : 'All updates flow through Rx.';
+        (args is String && args.isNotEmpty)
+            ? args
+            : 'All updates flow through Rx.';
     readyMessage(message);
   }
 
@@ -69,11 +67,7 @@ class UserProfile {
   int level;
   bool marketingOptIn;
 
-  UserProfile copyWith({
-    String? name,
-    int? level,
-    bool? marketingOptIn,
-  }) {
+  UserProfile copyWith({String? name, int? level, bool? marketingOptIn}) {
     return UserProfile(
       name: name ?? this.name,
       level: level ?? this.level,
@@ -81,4 +75,3 @@ class UserProfile {
     );
   }
 }
-

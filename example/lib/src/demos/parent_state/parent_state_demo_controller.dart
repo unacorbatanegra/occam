@@ -19,4 +19,3 @@ class ParentStateDemoController extends StateController<ParentStateDemoPage> {
     super.dispose();
   }
 }
-

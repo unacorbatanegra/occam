@@ -59,4 +59,3 @@ class StreamBindingController extends StateController<StreamBindingPage> {
     super.dispose();
   }
 }
-

@@ -7,10 +7,9 @@ class CatalogController extends StateController<CatalogPage> {
 
   void openDemo(DemoEntry entry) {
     lastOpened(entry.title);
-    Navigator.of(context).pushNamed(
-      entry.routeName,
-      arguments: entry.arguments,
-    );
+    Navigator.of(
+      context,
+    ).pushNamed(entry.routeName, arguments: entry.arguments);
   }
 
   @override

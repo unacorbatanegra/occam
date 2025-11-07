@@ -14,9 +14,7 @@ class CatalogPage extends StateWidget<CatalogController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Occam Example Catalog'),
-      ),
+      appBar: AppBar(title: const Text('Occam Example Catalog')),
       body: Column(
         children: [
           Padding(
@@ -40,8 +38,9 @@ class CatalogPage extends StateWidget<CatalogController> {
           Expanded(
             child: ListView.separated(
               itemCount: state.demos.length,
-              separatorBuilder: (context, index) =>
-                  const Divider(height: 0, indent: 16, endIndent: 16),
+              separatorBuilder:
+                  (context, index) =>
+                      const Divider(height: 0, indent: 16, endIndent: 16),
               itemBuilder: (context, index) {
                 final demo = state.demos[index];
                 return DemoTile(entry: demo);
@@ -69,4 +68,3 @@ class DemoTile extends ParentState<CatalogController> {
     );
   }
 }
-
