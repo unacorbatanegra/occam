@@ -2,27 +2,35 @@
 
 part of occam;
 
+/// Base state class used by [StateWidget] implementations.
 class StateController<T extends StateWidget> extends State<T> {
+  /// Throws to prevent UI building from the controller.
   @mustCallSuper
   @override
   Widget build(BuildContext context) {
-    throw "$runtimeType.build() is invalid. Use <StateWidget.build()> instead.";
+    throw UnsupportedError(
+      '$runtimeType.build() is invalid. Use <StateWidget.build()> instead.',
+    );
   }
 
+  /// Provides initialization hooks for subclasses.
   @override
   @mustCallSuper
   void initState() {
     super.initState();
-    if (OccamDebug.debug) print('$this initializated');
+    if (OccamDebug.debug) print('$this initialized');
   }
 
-  /// Use this instead of didChangeDependencies()
-  /// initState()
-  /// context is "safe"
+  /// Called after the first frame when the widget is mounted.
+  ///
+  /// Use this hook for logic that needs a fully initialized element tree, such
+  /// as interacting with inherited widgets or routing APIs. Subclasses should
+  /// override this method instead of [didChangeDependencies].
   @visibleForOverriding
   @protected
   void readyState() {}
 
+  /// Narrows the type of the stateful context for consumers.
   @override
   StatefulElement get context => super.context as StatefulElement;
 
@@ -31,16 +39,6 @@ class StateController<T extends StateWidget> extends State<T> {
   void dispose() {
     if (OccamDebug.debug) print('$this disposed');
 
-    for (final callBack in _onDispose ?? <Function?>[]) {
-      callBack?.call();
-    }
     super.dispose();
-  }
-
-  List<Function?>? _onDispose;
-
-  void onDispose(Function callback) {
-    _onDispose ??= [];
-    _onDispose?.add(callback);
   }
 }

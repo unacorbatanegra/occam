@@ -1,29 +1,28 @@
 import 'package:flutter/material.dart';
 
-import 'src/presentation/pages/home/bottom/bottom_page.dart';
-import 'src/presentation/pages/home/home_page.dart';
-import 'src/presentation/pages/second/second_page.dart';
+import 'src/catalog/catalog_page.dart';
+import 'src/demo_registry.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const OccamExamplesApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+class OccamExamplesApp extends StatelessWidget {
+  const OccamExamplesApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Occam Examples',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigoAccent.shade400),
+        useMaterial3: true,
       ),
       initialRoute: '/',
       routes: {
-        '/': (ctx) => const HomePage(),
-        '/secondPage': (ctx) => const SecondPage(),
-        '/bottom': (ctx) => const BottomPage(),
+        '/': (ctx) => const CatalogPage(),
       },
+      onGenerateRoute: DemoRegistry.onGenerateRoute,
     );
   }
 }
