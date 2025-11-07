@@ -8,20 +8,20 @@ import 'package:occam/occam.dart';
 
 class _TestController extends StateController {
   final list = <int>[].rx;
+  Timer? timer;
 
   @override
   void readyState() {
-    Timer? timer;
     timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       list.add(list.length);
     });
-    onDispose(timer.cancel);
 
     super.readyState();
   }
 
   @override
   void dispose() {
+    timer?.cancel();
     list.dispose();
     super.dispose();
   }

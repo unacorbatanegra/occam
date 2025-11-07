@@ -1,7 +1,6 @@
 import 'package:example/src/presentation/pages/home/home_controller.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
 import 'package:occam/occam.dart';
 
 import 'nested_controller.dart';

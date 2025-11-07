@@ -6,19 +6,18 @@ class StateController<T extends StateWidget> extends State<T> {
   @mustCallSuper
   @override
   Widget build(BuildContext context) {
-    throw "$runtimeType.build() is invalid. Use <StateWidget.build()> instead.";
+    throw UnsupportedError(
+      '$runtimeType.build() is invalid. Use <StateWidget.build()> instead.',
+    );
   }
 
   @override
   @mustCallSuper
   void initState() {
     super.initState();
-    if (OccamDebug.debug) print('$this initializated');
+    if (OccamDebug.debug) print('$this initialized');
   }
 
-  /// Use this instead of didChangeDependencies()
-  /// initState()
-  /// context is "safe"
   @visibleForOverriding
   @protected
   void readyState() {}
@@ -31,16 +30,6 @@ class StateController<T extends StateWidget> extends State<T> {
   void dispose() {
     if (OccamDebug.debug) print('$this disposed');
 
-    for (final callBack in _onDispose ?? <Function?>[]) {
-      callBack?.call();
-    }
     super.dispose();
-  }
-
-  List<Function?>? _onDispose;
-
-  void onDispose(Function callback) {
-    _onDispose ??= [];
-    _onDispose?.add(callback);
   }
 }

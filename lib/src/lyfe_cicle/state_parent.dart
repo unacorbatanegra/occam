@@ -7,7 +7,7 @@ abstract class ParentState<T extends StateController> extends StatelessWidget
 
 mixin ParentStateMixin<T extends StateController> on StatelessWidget {
   T get state =>
-      (StateElement._elements[this] as ParentStateElement)._otherState as T;
+      (StateElement._elements[this] as ParentStateElement<T>).otherState;
   @override
   ParentStateElement createElement() {
     assert(const Object() is! T, """
@@ -22,28 +22,29 @@ class ParentStateElement<T extends StateController> extends StatelessElement {
   ParentStateElement(StatelessWidget widget) : super(widget) {
     StateElement._elements[widget] = this;
   }
-  late T _otherState;
+  T? _otherState;
 
-  bool _justMounted = true;
+  T get otherState {
+    final state = _otherState;
+    assert(state != null, 'ParentStateElement accessed before it was ready');
+    return state!;
+  }
 
   @override
   void mount(Element? parent, Object? newSlot) {
-    _justMounted = true;
+    _otherState = null;
     super.mount(parent, newSlot);
   }
 
   @override
   Widget build() {
-    if (_justMounted) {
-      _otherState = findRootAncestorStateOfType<T>()!;
-      _justMounted = false;
-    }
+    _resolveOtherState();
     return super.build();
   }
 
   @override
   void unmount() {
-    _justMounted = false;
+    _otherState = null;
     StateElement._elements[widget] = null;
     super.unmount();
   }
@@ -51,7 +52,16 @@ class ParentStateElement<T extends StateController> extends StatelessElement {
   @override
   void update(StatelessWidget newWidget) {
     StateElement._elements[newWidget] = this;
+    _resolveOtherState();
     super.update(newWidget);
+  }
+
+  void _resolveOtherState() {
+    final resolved = findStateControllerProvider();
+    if (identical(resolved, _otherState)) {
+      return;
+    }
+    _otherState = resolved;
   }
 
   T findStateControllerProvider() {

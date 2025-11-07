@@ -17,7 +17,7 @@ abstract class StateWidget<T extends State> extends StatefulWidget {
 class StateElement extends StatefulElement {
   static final _elements = Expando<Element>('State Elements');
 
-  bool _justMounted = true;
+  bool _isFirstBuild = true;
   State<StatefulWidget>? _cachedState;
 
   StateElement(StateWidget widget) : super(widget) {
@@ -27,13 +27,13 @@ class StateElement extends StatefulElement {
 
   @override
   void mount(Element? parent, Object? newSlot) {
-    _justMounted = true;
+    _isFirstBuild = true;
     super.mount(parent, newSlot);
   }
 
   @override
   void unmount() {
-    _justMounted = false;
+    _isFirstBuild = false;
     _elements[widget] = null;
     _cachedState = null;
     super.unmount();
@@ -50,8 +50,8 @@ class StateElement extends StatefulElement {
 
   @override
   void performRebuild() {
-    if (_justMounted) {
-      _justMounted = false;
+    if (_isFirstBuild) {
+      _isFirstBuild = false;
       WidgetsBinding.instance.addPostFrameCallback(
         (_) {
           if (!mounted) return;
