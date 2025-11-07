@@ -89,24 +89,22 @@ class _SettingsTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Runtime configuration',
-            style: theme.textTheme.titleLarge,
-          ),
+          Text('Runtime configuration', style: theme.textTheme.titleLarge),
           const SizedBox(height: 8),
           Card(
             elevation: 0,
             child: RxWidget<bool>(
               notifier: controller.keepAliveEnabled,
-              builder: (context, enabled) => SwitchListTile(
-                title: const Text('Keep the articles tab alive'),
-                subtitle: const Text(
-                  'Scroll down the articles tab, switch to this tab, and go back. '
-                  'With keep-alive enabled, the scroll offset and list state are preserved.',
-                ),
-                value: enabled,
-                onChanged: controller.toggleKeepAlive,
-              ),
+              builder:
+                  (context, enabled) => SwitchListTile(
+                    title: const Text('Keep the articles tab alive'),
+                    subtitle: const Text(
+                      'Scroll down the articles tab, switch to this tab, and go back. '
+                      'With keep-alive enabled, the scroll offset and list state are preserved.',
+                    ),
+                    value: enabled,
+                    onChanged: controller.toggleKeepAlive,
+                  ),
             ),
           ),
           const SizedBox(height: 16),
@@ -114,15 +112,16 @@ class _SettingsTab extends StatelessWidget {
             elevation: 0,
             child: RxWidget<int>(
               notifier: controller.articleBuilds,
-              builder: (context, builds) => ListTile(
-                leading: const Icon(Icons.auto_graph),
-                title: const Text('Article tab rebuilds'),
-                subtitle: Text(
-                  builds == 1
-                      ? 'Built once so far.'
-                      : 'Built $builds times so far.',
-                ),
-              ),
+              builder:
+                  (context, builds) => ListTile(
+                    leading: const Icon(Icons.auto_graph),
+                    title: const Text('Article tab rebuilds'),
+                    subtitle: Text(
+                      builds == 1
+                          ? 'Built once so far.'
+                          : 'Built $builds times so far.',
+                    ),
+                  ),
             ),
           ),
           const SizedBox(height: 16),
@@ -150,4 +149,3 @@ class _SettingsTab extends StatelessWidget {
     );
   }
 }
-

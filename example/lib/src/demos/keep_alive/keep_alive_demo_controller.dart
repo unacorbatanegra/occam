@@ -50,7 +50,11 @@ class KeepAliveDemoController extends StateController<KeepAliveDemoPage>
 }
 
 class _Article {
-  const _Article({required this.id, required this.title, required this.summary});
+  const _Article({
+    required this.id,
+    required this.title,
+    required this.summary,
+  });
 
   final int id;
   final String title;
