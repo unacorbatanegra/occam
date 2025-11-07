@@ -5,7 +5,14 @@ abstract class StateWidget<T extends State> extends StatefulWidget {
 
   Widget build(BuildContext context);
 
-  T get state => StateElement._elements[this] as T;
+  T get state {
+    final s = StateElement._elements[this];
+    assert(s != null, 'State accessed before widget mounted');
+    if (s == null) {
+      throw StateError('State accessed before widget mounted');
+    }
+    return s as T;
+  }
 
   @override
   StateElement createElement() => StateElement(this);
