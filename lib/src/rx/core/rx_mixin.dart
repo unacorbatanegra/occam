@@ -4,8 +4,9 @@ mixin RxMixin<T> on ValueNotifier<T> {
   static const _noValue = Object();
 
   T call([Object? newValue = _noValue]) {
-    if (!identical(newValue, _noValue) && newValue != value)
+    if (!identical(newValue, _noValue) && newValue != value) {
       value = newValue as T;
+    }
     return value;
   }
 
@@ -52,8 +53,7 @@ mixin RxMixin<T> on ValueNotifier<T> {
 
   bool removeValueListener(ValueChanged<T> listener) {
     _checkDisposed();
-    if (_valueListeners == null)
-      throw StateError('No ValueListeners were added');
+    if (_valueListeners == null) throw StateError('No ValueListeners were added');
     final wrapper = _valueListeners!.remove(listener);
     if (wrapper == null) return false;
     removeListener(wrapper);
