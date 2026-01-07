@@ -1,6 +1,6 @@
 // ignore_for_file: avoid_print
 
-part of occam;
+part of '../../../occam.dart';
 
 /// Base state class used by [StateWidget] implementations.
 class StateController<T extends StateWidget> extends State<T> {

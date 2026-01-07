@@ -1,4 +1,4 @@
-part of occam;
+part of '../../../occam.dart';
 
 /// Convenience widget to read a `StateController` higher up the tree.
 ///
@@ -23,20 +23,19 @@ part of occam;
 /// Stateless widget that reads a controller from the ancestor tree.
 abstract class ParentState<T extends StateController> extends StatelessWidget
     with ParentStateMixin<T> {
-  const ParentState({Key? key}) : super(key: key);
+  const ParentState({super.key});
 }
 
 /// Mixin that exposes a [StateController] through the [state] getter.
 mixin ParentStateMixin<T extends StateController> on StatelessWidget {
   /// Provides the nearest ancestor `StateController<T>`.
-  T get state =>
-      (StateElement._elements[this] as ParentStateElement<T>).otherState;
+  T get state => (StateElement._elements[this] as ParentStateElement<T>).otherState;
   @override
   ParentStateElement createElement() {
-    assert(const Object() is! T, """
+    assert(const Object() is! T, '''
           You have to provide a subclass of StateController:
           $runtimeType extends ParentStateWidget<StateController>
-       """);
+       ''');
     return ParentStateElement<T>(this);
   }
 }
@@ -97,17 +96,17 @@ class ParentStateElement<T extends StateController> extends StatelessElement {
 
   /// Traverses ancestors to find the nearest matching [StateController].
   T findStateControllerProvider() {
-    T? _state;
+    T? state;
     visitAncestorElements((element) {
       if (element is StateElement && element.state is T) {
-        _state = element.state as T;
+        state = element.state as T;
         return false;
       }
       return true;
     });
-    if (_state == null) {
+    if (state == null) {
       throw '[ParentStateWidget] can\'t find a parent StateController <$T> dependency in the Widget tree. Make sure you have a StateWidget<$T> somewhere up the tree';
     }
-    return _state!;
+    return state!;
   }
 }

@@ -43,13 +43,11 @@ void main() {
         MaterialApp(
           home: RxWidget(
             notifier: notifier,
-            builder: (ctx, value) {
-              return CupertinoButton(
-                key: const Key('button'),
-                onPressed: () => notifier.value++,
-                child: Text('$value'),
-              );
-            },
+            builder: (ctx, value) => CupertinoButton(
+              key: const Key('button'),
+              onPressed: () => notifier.value++,
+              child: Text('$value'),
+            ),
           ),
         ),
       );

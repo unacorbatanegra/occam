@@ -1,4 +1,4 @@
-part of occam;
+part of '../../../occam.dart';
 
 mixin RxMixin<T> on ValueNotifier<T> {
   static const _noValue = Object();
@@ -67,7 +67,7 @@ mixin RxMixin<T> on ValueNotifier<T> {
 
   void bindStream(Stream<T> stream) {
     _checkDisposed();
-    _subscriptions?.remove(stream)?.cancel();
+    unawaited(_subscriptions?.remove(stream)?.cancel());
     (_subscriptions ??= {})[stream] =
         (stream.isBroadcast ? stream : stream.asBroadcastStream()).listen(
       (event) => value = event,

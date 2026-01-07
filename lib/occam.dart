@@ -1,4 +1,4 @@
-library occam;
+// library occam;
 
 import 'dart:async';
 import 'dart:collection';
@@ -15,7 +15,6 @@ part 'src/rx/core/rx_mixin.dart';
 part 'src/rx/extensions/extensions.dart';
 part 'src/rx/iterables/rx_list.dart';
 part 'src/rx/primitives/rx_bool.dart';
-
 part 'src/widgets/rx_widget.dart';
 
 class OccamDebug {

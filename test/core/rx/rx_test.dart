@@ -34,17 +34,15 @@ class _TestPage extends StateWidget<_TestController> {
   _TestController createState() => _TestController();
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: RxWidget<List<int>>(
-        notifier: state.list,
-        builder: (ctx, list) => ListView.builder(
-          itemCount: list.length,
-          itemBuilder: (ctx, index) => Text(list[index].toString()),
+  Widget build(BuildContext context) => Scaffold(
+        body: RxWidget<List<int>>(
+          notifier: state.list,
+          builder: (ctx, list) => ListView.builder(
+            itemCount: list.length,
+            itemBuilder: (ctx, index) => Text(list[index].toString()),
+          ),
         ),
-      ),
-    );
-  }
+      );
 }
 
 void main() {

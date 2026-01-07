@@ -1,4 +1,4 @@
-part of occam;
+part of '../../../occam.dart';
 
 /// A lightweight bridge between Occam's reactive values and Flutter widgets.
 ///
@@ -27,25 +27,25 @@ part of occam;
 /// value. For larger widgets or multiple values, compose several `RxWidget`s or
 /// expose the controller directly in your `StateWidget`.
 class RxWidget<T> extends StatefulWidget {
+  /// Creates an [RxWidget] that listens to [notifier] and hands the latest value
+  /// to [builder].
+  const RxWidget({
+    super.key,
+    required this.notifier,
+    required this.builder,
+  });
+
   /// The reactive value to observe for rebuilds.
-  final _RxInterface<T> notifier;
+  final RxInterface<T> notifier;
 
   /// Builds a widget every time [notifier] updates.
   final Widget Function(BuildContext context, T value) builder;
 
-  /// Creates an [RxWidget] that listens to [notifier] and hands the latest value
-  /// to [builder].
-  const RxWidget({
-    Key? key,
-    required this.notifier,
-    required this.builder,
-  }) : super(key: key);
-
   @override
-  _RxWidgetState createState() => _RxWidgetState<T>();
+  RxWidgetState createState() => RxWidgetState<T>();
 }
 
-class _RxWidgetState<T> extends State<RxWidget<T>> {
+class RxWidgetState<T> extends State<RxWidget<T>> {
   late T value;
 
   @override

@@ -1,4 +1,4 @@
-part of occam;
+part of '../../../occam.dart';
 
 /// Provides `AutomaticKeepAliveClientMixin` wiring for [StateController]s.
 ///

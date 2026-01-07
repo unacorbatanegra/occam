@@ -5,16 +5,16 @@ import 'package:occam/occam.dart';
 
 void main() {
   testWidgets(
-    "Navigation",
+    'Navigation',
     (tester) async {
       await tester.pumpWidget(const MaterialApp(home: MyPage()));
-      expect(find.byKey(const Key("rx")), findsOneWidget);
+      expect(find.byKey(const Key('rx')), findsOneWidget);
       final button = find.byType(TextButton);
-      expect(find.text("1"), findsOneWidget);
+      expect(find.text('1'), findsOneWidget);
       expect(button, findsOneWidget);
       await tester.tap(button);
       await tester.pump();
-      expect(find.text("2"), findsOneWidget);
+      expect(find.text('2'), findsOneWidget);
     },
   );
 }
@@ -42,14 +42,12 @@ class MyPage extends StateWidget<MyPageController> {
   MyPageController createState() => MyPageController();
 
   @override
-  Widget build(BuildContext context) {
-    return RxWidget(
-      key: const Key('rx'),
-      notifier: state.counter,
-      builder: (ctx, value) => TextButton(
-        onPressed: state.onPressed,
-        child: Text(value.toString()),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => RxWidget(
+        key: const Key('rx'),
+        notifier: state.counter,
+        builder: (ctx, value) => TextButton(
+          onPressed: state.onPressed,
+          child: Text(value.toString()),
+        ),
+      );
 }

@@ -1,7 +1,7 @@
-part of occam;
+part of '../../../occam.dart';
 
-class RxBool extends _RxInterface<bool> {
-  RxBool(bool value) : super(value);
+class RxBool extends RxInterface<bool> {
+  RxBool(super.value);
 
   /// The logical conjunction ("and") of this and [other].
   ///
@@ -23,9 +23,7 @@ class RxBool extends _RxInterface<bool> {
 
   /// Returns either `"true"` for `true` and `"false"` for `false`.
   @override
-  String toString() {
-    return '$value';
-  }
+  String toString() => '$value';
 
   @override
   bool operator ==(Object other) {

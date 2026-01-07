@@ -1,7 +1,7 @@
-part of occam;
+part of '../../../occam.dart';
 
 abstract class StateWidget<T extends State> extends StatefulWidget {
-  const StateWidget({Key? key}) : super(key: key);
+  const StateWidget({super.key});
 
   Widget build(BuildContext context);
 
@@ -15,13 +15,12 @@ abstract class StateWidget<T extends State> extends StatefulWidget {
 }
 
 class StateElement extends StatefulElement {
-  static final _elements = Expando('state-controllers');
-
-  bool _justMounted = true;
-
   StateElement(StateWidget widget) : super(widget) {
     _elements[widget] = state;
   }
+  static final _elements = Expando('state-controllers');
+
+  bool _justMounted = true;
 
   @override
   void mount(Element? parent, Object? newSlot) {
