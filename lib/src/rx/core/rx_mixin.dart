@@ -1,10 +1,10 @@
 part of occam;
 
 mixin RxMixin<T> on ValueNotifier<T> {
-  T call([T? newValue]) {
-    if (newValue != null && newValue != value) {
-      value = newValue;
-    }
+  static const _noValue = Object();
+
+  T call([Object? newValue = _noValue]) {
+    if (!identical(newValue, _noValue) && newValue != value) value = newValue as T;
     return value;
   }
 
@@ -15,25 +15,27 @@ mixin RxMixin<T> on ValueNotifier<T> {
     if (newValue != super.value) super.value = newValue;
   }
 
-  void update(T Function(T value) fn) {
-    value = fn(super.value);
-  }
+  void update(T Function(T value) fn) => value = fn(super.value);
 
   Map<Stream, StreamSubscription>? _subscriptions;
-
   List<VoidCallback>? _listeners;
-
   Map<ValueChanged<T>, VoidCallback>? _valueListeners;
+  bool _disposed = false;
+
+  void _checkDisposed() {
+    if (_disposed) throw StateError('Cannot use RxMixin after disposal');
+  }
 
   @override
   void addListener(VoidCallback listener) {
-    _listeners ??= [];
-    _listeners?.add(listener);
+    _checkDisposed();
+    (_listeners ??= []).add(listener);
     super.addListener(listener);
   }
 
   @override
   void removeListener(VoidCallback listener) {
+    _checkDisposed();
     super.removeListener(listener);
     _listeners?.remove(listener);
   }
@@ -42,43 +44,33 @@ mixin RxMixin<T> on ValueNotifier<T> {
   int get lengthOfListeners => _listeners?.length ?? 0;
 
   void addValueListener(ValueChanged<T> listener) {
-    _valueListeners ??= {};
-    if (!_valueListeners!.containsKey(listener)) {
-      _valueListeners![listener] = () => listener(value);
-      addListener(_valueListeners![listener]!);
-    }
+    _checkDisposed();
+    if ((_valueListeners ??= {})[listener] != null) return;
+    addListener(_valueListeners![listener] = () => listener(value));
   }
 
   bool removeValueListener(ValueChanged<T> listener) {
-    if (_valueListeners == null) {
-      throw 'No `ValueListeners were added';
-    }
-    if (!_valueListeners!.containsKey(listener)) return false;
-    removeListener(_valueListeners!.remove(listener)!);
+    _checkDisposed();
+    if (_valueListeners == null) throw StateError('No ValueListeners were added');
+    final wrapper = _valueListeners!.remove(listener);
+    if (wrapper == null) return false;
+    removeListener(wrapper);
     return true;
   }
 
-  FutureOr closeStream(Stream<T> stream) {
-    if (_subscriptions?.containsKey(stream) ?? false) {
-      return _subscriptions?.remove(stream)?.cancel();
-    }
-  }
+  FutureOr<void> closeStream(Stream<T> stream) =>
+      _subscriptions?.remove(stream)?.cancel();
 
   void bindStream(Stream<T> stream) {
-    _subscriptions ??= {};
-    late StreamSubscription subscription;
-    subscription = stream.asBroadcastStream().listen(
+    _checkDisposed();
+    _subscriptions?.remove(stream)?.cancel();
+    (_subscriptions ??= {})[stream] =
+        (stream.isBroadcast ? stream : stream.asBroadcastStream()).listen(
       (event) => value = event,
-      onDone: () {
-        subscription.cancel();
-        _subscriptions?.remove(subscription);
-      },
+      onError: (e, s) => debugPrint('RxMixin error: $e'),
+      onDone: () => _subscriptions?.remove(stream),
     );
-    _subscriptions![stream] = subscription;
   }
-
-  /// To prevent potential thrown exceptions.
-  bool _disposed = false;
 
   @override
   bool get hasListeners => _listeners?.isNotEmpty ?? false;
@@ -87,27 +79,14 @@ mixin RxMixin<T> on ValueNotifier<T> {
 
   @override
   void dispose() {
+    if (_disposed) return;
     _disposed = true;
-
-    _listeners ??= [];
-    for (final listener in _listeners!) {
-      removeListener(listener);
-    }
+    _listeners?.forEach(super.removeListener);
     _listeners = null;
-
-    _valueListeners ??= {};
-    for (final listener in _valueListeners!.entries) {
-      removeValueListener(listener.key);
-    }
+    _valueListeners?.values.forEach(super.removeListener);
     _valueListeners = null;
-
-    _subscriptions ??= {};
-    for (final subscription in _subscriptions!.entries) {
-      subscription.value.cancel();
-    }
-    _subscriptions?.clear();
+    _subscriptions?.values.forEach((s) => s.cancel());
     _subscriptions = null;
-
     super.dispose();
   }
 }
