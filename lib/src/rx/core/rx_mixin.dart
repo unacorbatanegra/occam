@@ -53,8 +53,9 @@ mixin RxMixin<T> on ValueNotifier<T> {
 
   bool removeValueListener(ValueChanged<T> listener) {
     _checkDisposed();
-    if (_valueListeners == null)
-      throw StateError('No ValueListeners were added');
+    if (_valueListeners == null) {
+      return false;
+    }
     final wrapper = _valueListeners!.remove(listener);
     if (wrapper == null) return false;
     removeListener(wrapper);
