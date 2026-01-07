@@ -29,7 +29,8 @@ abstract class ParentState<T extends StateController> extends StatelessWidget
 /// Mixin that exposes a [StateController] through the [state] getter.
 mixin ParentStateMixin<T extends StateController> on StatelessWidget {
   /// Provides the nearest ancestor `StateController<T>`.
-  T get state => (StateElement._elements[this] as ParentStateElement<T>).otherState;
+  T get state =>
+      (StateElement._elements[this] as ParentStateElement<T>).otherState;
   @override
   ParentStateElement createElement() {
     assert(const Object() is! T, """
