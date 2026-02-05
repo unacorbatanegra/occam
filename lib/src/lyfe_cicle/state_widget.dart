@@ -5,7 +5,17 @@ abstract class StateWidget<T extends State> extends StatefulWidget {
 
   Widget build(BuildContext context);
 
-  T get state => StateElement._elements[this] as T;
+  T get state {
+    final value = StateElement._elements[this];
+    if (value == null) {
+      throw FlutterError(
+        'StateWidget.state was accessed but the controller is not available. '
+        'This can happen during widget tree updates. '
+        'If this persists, please report it at https://github.com/unacorbatanegra/occam/issues.',
+      );
+    }
+    return value as T;
+  }
 
   @override
   StateElement createElement() => StateElement(this);
@@ -37,9 +47,10 @@ class StateElement extends StatefulElement {
 
   @override
   void update(StatefulWidget newWidget) {
-    _elements[widget] = null;
+    final oldWidget = widget;
     _elements[newWidget] = state;
     super.update(newWidget);
+    _elements[oldWidget] = null;
   }
 
   @override
