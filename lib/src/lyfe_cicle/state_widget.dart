@@ -50,7 +50,9 @@ class StateElement extends StatefulElement {
     final oldWidget = widget;
     _elements[newWidget] = state;
     super.update(newWidget);
-    _elements[oldWidget] = null;
+    if (!identical(oldWidget, newWidget)) {
+      _elements[oldWidget] = null;
+    }
   }
 
   @override

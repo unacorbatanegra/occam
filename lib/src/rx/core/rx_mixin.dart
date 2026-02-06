@@ -14,6 +14,7 @@ mixin RxMixin<T> on ValueNotifier<T> {
 
   @override
   set value(T newValue) {
+    if (disposed) return;
     if (newValue != super.value) super.value = newValue;
   }
 
