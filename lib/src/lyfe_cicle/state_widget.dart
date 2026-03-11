@@ -16,6 +16,17 @@ abstract class StateWidget<T extends State> extends StatefulWidget {
         'widget may have been unmounted.',
       );
     }
+    // Lazy cleanup: don't return a disposed state (e.g. after one of several
+    // const widgets unmounted and we didn't clear the shared key).
+    final stateValue = value as State;
+    if (!stateValue.mounted) {
+      StateElement._elements[this] = null;
+      throw FlutterError(
+        'StateWidget.state was accessed but the controller is not available. '
+        'Access state only from within build(BuildContext context), or the '
+        'widget may have been unmounted.',
+      );
+    }
     return value as T;
   }
 
@@ -44,7 +55,9 @@ class StateElement extends StatefulElement {
 
   @override
   void unmount() {
-    _elements[widget] = null;
+    // Do not clear _elements[widget] here: with const widgets several elements
+    // share the same widget instance; clearing would break the others. Stale
+    // entries are cleared lazily when read (see state getter).
     _justMounted = false;
     super.unmount();
   }
