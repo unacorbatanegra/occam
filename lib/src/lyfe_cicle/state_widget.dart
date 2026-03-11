@@ -7,10 +7,8 @@ abstract class StateWidget<T extends State> extends StatefulWidget {
 
   T get state {
     final fromStack = StateElement._stateFromBuildStack(this);
-    print("fromStack: ${fromStack.hashCode}");
     if (fromStack != null) return fromStack as T;
     final fromRegistry = StateElement._stateFromRegistry(this);
-    print("fromRegistry: ${fromRegistry.hashCode}");
     if (fromRegistry != null) return fromRegistry as T;
     throw FlutterError(
       'StateWidget.state was accessed but the controller is not available. '
@@ -41,8 +39,6 @@ class StateElement extends StatefulElement {
   void mount(Element? parent, Object? newSlot) {
     _justMounted = true;
     _mountedStateElements.add(this);
-    print("mount: $hashCode");
-    print("mount _mountedStateElements length: ${_mountedStateElements.length}");
     super.mount(parent, newSlot);
   }
 
@@ -50,9 +46,6 @@ class StateElement extends StatefulElement {
   void unmount() {
     _mountedStateElements.remove(this);
     _justMounted = false;
-    print("unmount: $hashCode");
-    print("unmount _mountedStateElements length: ${_mountedStateElements.length}");
-    print("unmount _buildStackByWidget length: ${_buildStackByWidget.length}");
     super.unmount();
   }
 
