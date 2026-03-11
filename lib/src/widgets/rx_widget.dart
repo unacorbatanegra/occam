@@ -26,8 +26,11 @@ class _RxWidgetState<T> extends State<RxWidget<T>> {
 
   @override
   void didUpdateWidget(RxWidget<T> oldWidget) {
-    if (oldWidget.notifier.value != widget.notifier.value) {
+    if (oldWidget.notifier != widget.notifier) {
       oldWidget.notifier.removeListener(_update);
+      widget.notifier.addListener(_update);
+      value = widget.notifier.value;
+    } else if (oldWidget.notifier.value != widget.notifier.value) {
       value = widget.notifier.value;
     }
     super.didUpdateWidget(oldWidget);
