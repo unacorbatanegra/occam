@@ -7,8 +7,10 @@ abstract class StateWidget<T extends State> extends StatefulWidget {
 
   T get state {
     final fromStack = StateElement._stateFromBuildStack(this);
+    print("fromStack: ${fromStack.hashCode}");
     if (fromStack != null) return fromStack as T;
     final fromRegistry = StateElement._stateFromRegistry(this);
+    print("fromRegistry: ${fromRegistry.hashCode}");
     if (fromRegistry != null) return fromRegistry as T;
     throw FlutterError(
       'StateWidget.state was accessed but the controller is not available. '
@@ -26,7 +28,9 @@ abstract class StateWidget<T extends State> extends StatefulWidget {
 
 class StateElement extends StatefulElement {
   static final _elements = Expando('State Controllers');
-  static final List<StateElement> _buildStack = [];
+
+  /// Stack of currently building elements per widget (supports nested same-widget).
+  static final Map<StateWidget, List<StateElement>> _buildStackByWidget = {};
   static final Set<StateElement> _mountedStateElements = {};
 
   bool _justMounted = true;
@@ -37,6 +41,8 @@ class StateElement extends StatefulElement {
   void mount(Element? parent, Object? newSlot) {
     _justMounted = true;
     _mountedStateElements.add(this);
+    print("mount: $hashCode");
+    print("mount _mountedStateElements length: ${_mountedStateElements.length}");
     super.mount(parent, newSlot);
   }
 
@@ -44,6 +50,9 @@ class StateElement extends StatefulElement {
   void unmount() {
     _mountedStateElements.remove(this);
     _justMounted = false;
+    print("unmount: $hashCode");
+    print("unmount _mountedStateElements length: ${_mountedStateElements.length}");
+    print("unmount _buildStackByWidget length: ${_buildStackByWidget.length}");
     super.unmount();
   }
 
@@ -66,22 +75,21 @@ class StateElement extends StatefulElement {
 
   @override
   Widget build() {
-    _buildStack.add(this);
+    final w = widget;
+    (_buildStackByWidget[w] ??= []).add(this);
     try {
       return widget.build(this);
     } finally {
-      _buildStack.removeLast();
+      final list = _buildStackByWidget[w]!;
+      list.removeLast();
+      if (list.isEmpty) _buildStackByWidget.remove(w);
     }
   }
 
   static State? _stateFromBuildStack(StateWidget widget) {
-    for (var i = _buildStack.length - 1; i >= 0; i--) {
-      final element = _buildStack[i];
-      if (identical(element.widget, widget)) {
-        return element.state;
-      }
-    }
-    return null;
+    final list = _buildStackByWidget[widget];
+    if (list == null || list.isEmpty) return null;
+    return list.last.state;
   }
 
   /// Fallback when stack is empty (e.g. child rebuild). Keys by element, not
