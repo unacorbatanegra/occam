@@ -31,7 +31,7 @@ class StateElement extends StatefulElement {
 
   bool _justMounted = true;
 
-  StateElement(StateWidget widget) : super(widget) {}
+  StateElement(StateWidget widget) : super(widget);
 
   @override
   void mount(Element? parent, Object? newSlot) {
@@ -45,11 +45,6 @@ class StateElement extends StatefulElement {
     _mountedStateElements.remove(this);
     _justMounted = false;
     super.unmount();
-  }
-
-  @override
-  void update(StatefulWidget newWidget) {
-    super.update(newWidget);
   }
 
   @override
@@ -75,10 +70,7 @@ class StateElement extends StatefulElement {
     try {
       return widget.build(this);
     } finally {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final i = _buildStack.lastIndexOf(this);
-        if (i != -1) _buildStack.removeAt(i);
-      });
+      _buildStack.removeLast();
     }
   }
 
