@@ -44,14 +44,17 @@ class ParentStateElement<T extends StateController> extends StatelessElement {
 
   @override
   void unmount() {
+    StateElement._elements[widget] = null;
     _justMounted = false;
     super.unmount();
   }
 
   @override
   void update(StatelessWidget newWidget) {
+    final oldWidget = widget;
     StateElement._elements[newWidget] = this;
     super.update(newWidget);
+    StateElement._elements[oldWidget] = null;
   }
 
   T findStateControllerProvider() {

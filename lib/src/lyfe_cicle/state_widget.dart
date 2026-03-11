@@ -5,7 +5,19 @@ abstract class StateWidget<T extends State> extends StatefulWidget {
 
   Widget build(BuildContext context);
 
-  T get state => StateElement._elements[this] as T;
+  T get state {
+    final fromStack = StateElement._stateFromBuildStack(this);
+    if (fromStack != null) return fromStack as T;
+    final value = StateElement._elements[this];
+    if (value == null) {
+      throw FlutterError(
+        'StateWidget.state was accessed but the controller is not available. '
+        'Access state only from within build(BuildContext context), or the '
+        'widget may have been unmounted.',
+      );
+    }
+    return value as T;
+  }
 
   @override
   StateElement createElement() => StateElement(this);
@@ -16,6 +28,7 @@ abstract class StateWidget<T extends State> extends StatefulWidget {
 
 class StateElement extends StatefulElement {
   static final _elements = Expando('State Controllers');
+  static final List<StateElement> _buildStack = [];
 
   bool _justMounted = true;
 
@@ -31,14 +44,17 @@ class StateElement extends StatefulElement {
 
   @override
   void unmount() {
+    _elements[widget] = null;
     _justMounted = false;
     super.unmount();
   }
 
   @override
   void update(StatefulWidget newWidget) {
+    final oldWidget = widget;
     _elements[newWidget] = state;
     super.update(newWidget);
+    _elements[oldWidget] = null;
   }
 
   @override
@@ -59,5 +75,22 @@ class StateElement extends StatefulElement {
   StateWidget get widget => super.widget as StateWidget;
 
   @override
-  Widget build() => widget.build(this);
+  Widget build() {
+    _buildStack.add(this);
+    try {
+      return widget.build(this);
+    } finally {
+      _buildStack.removeLast();
+    }
+  }
+
+  static State? _stateFromBuildStack(StateWidget widget) {
+    for (var i = _buildStack.length - 1; i >= 0; i--) {
+      final element = _buildStack[i];
+      if (identical(element.widget, widget)) {
+        return element.state;
+      }
+    }
+    return null;
+  }
 }
