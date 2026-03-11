@@ -1,11 +1,11 @@
 part of occam;
 
 abstract class RxInterface<T> extends ValueNotifier<T> with RxMixin<T> {
-  RxInterface(T value) : super(value);
+  RxInterface(super.value);
 }
 
 class Rx<T> extends RxInterface<T> {
-  Rx(T value) : super(value);
+  Rx(super.value);
 }
 
 mixin RxMixin<T> on ValueNotifier<T> {
@@ -61,36 +61,35 @@ mixin RxMixin<T> on ValueNotifier<T> {
     return true;
   }
 
-  FutureOr closeStream(Stream<T> stream) {
-    if (_subscriptions.containsKey(stream)) {
-      return _subscriptions.remove(stream)!.cancel();
-    }
+  Future<void>? closeStream(Stream<T> stream) {
+    return _subscriptions.remove(stream)?.cancel();
   }
 
   void bindStream(Stream<T> stream) {
+    closeStream(stream);
+
     late StreamSubscription subscription;
+
     subscription = stream.asBroadcastStream().listen(
       (event) => value = event,
       onDone: () {
         subscription.cancel();
-        _subscriptions.remove(subscription);
+        _subscriptions.remove(stream);
       },
     );
+
     _subscriptions[stream] = subscription;
   }
 
   /// To prevent potential thrown exceptions.
   bool _disposed = false;
 
-  @override
-  bool get hasListeners => _listeners.isNotEmpty;
-
   bool get disposed => _disposed;
 
   @override
   void dispose() {
     _disposed = true;
-    for (final listener in _listeners) {
+    for (final listener in List<VoidCallback>.from(_listeners)) {
       removeListener(listener);
     }
     for (final subscription in _subscriptions.values) {
