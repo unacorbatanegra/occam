@@ -8,26 +8,13 @@ abstract class StateWidget<T extends State> extends StatefulWidget {
   T get state {
     final fromStack = StateElement._stateFromBuildStack(this);
     if (fromStack != null) return fromStack as T;
-    final value = StateElement._elements[this];
-    if (value == null) {
-      throw FlutterError(
-        'StateWidget.state was accessed but the controller is not available. '
-        'Access state only from within build(BuildContext context), or the '
-        'widget may have been unmounted.',
-      );
-    }
-    // Lazy cleanup: don't return a disposed state (e.g. after one of several
-    // const widgets unmounted and we didn't clear the shared key).
-    final stateValue = value as State;
-    if (!stateValue.mounted) {
-      StateElement._elements[this] = null;
-      throw FlutterError(
-        'StateWidget.state was accessed but the controller is not available. '
-        'Access state only from within build(BuildContext context), or the '
-        'widget may have been unmounted.',
-      );
-    }
-    return value as T;
+    final fromRegistry = StateElement._stateFromRegistry(this);
+    if (fromRegistry != null) return fromRegistry as T;
+    throw FlutterError(
+      'StateWidget.state was accessed but the controller is not available. '
+      'Access state only from within build(BuildContext context), or the '
+      'widget may have been unmounted.',
+    );
   }
 
   @override
@@ -40,34 +27,29 @@ abstract class StateWidget<T extends State> extends StatefulWidget {
 class StateElement extends StatefulElement {
   static final _elements = Expando('State Controllers');
   static final List<StateElement> _buildStack = [];
+  static final Set<StateElement> _mountedStateElements = {};
 
   bool _justMounted = true;
 
-  StateElement(StateWidget widget) : super(widget) {
-    _elements[widget] = state;
-  }
+  StateElement(StateWidget widget) : super(widget) {}
 
   @override
   void mount(Element? parent, Object? newSlot) {
     _justMounted = true;
+    _mountedStateElements.add(this);
     super.mount(parent, newSlot);
   }
 
   @override
   void unmount() {
-    // Do not clear _elements[widget] here: with const widgets several elements
-    // share the same widget instance; clearing would break the others. Stale
-    // entries are cleared lazily when read (see state getter).
+    _mountedStateElements.remove(this);
     _justMounted = false;
     super.unmount();
   }
 
   @override
   void update(StatefulWidget newWidget) {
-    final oldWidget = widget;
-    _elements[newWidget] = state;
     super.update(newWidget);
-    _elements[oldWidget] = null;
   }
 
   @override
@@ -104,6 +86,17 @@ class StateElement extends StatefulElement {
     for (var i = _buildStack.length - 1; i >= 0; i--) {
       final element = _buildStack[i];
       if (identical(element.widget, widget)) {
+        return element.state;
+      }
+    }
+    return null;
+  }
+
+  /// Fallback when stack is empty (e.g. child rebuild). Keys by element, not
+  /// widget, so unmount only removes this element and does not affect others.
+  static State? _stateFromRegistry(StateWidget widget) {
+    for (final element in _mountedStateElements) {
+      if (element.mounted && identical(element.widget, widget)) {
         return element.state;
       }
     }
