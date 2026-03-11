@@ -80,7 +80,10 @@ class StateElement extends StatefulElement {
     try {
       return widget.build(this);
     } finally {
-      _buildStack.removeLast();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final i = _buildStack.lastIndexOf(this);
+        if (i != -1) _buildStack.removeAt(i);
+      });
     }
   }
 
