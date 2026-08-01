@@ -1,7 +1,7 @@
-part of occam;
+part of '../../../occam.dart';
 
 class RxList<T> extends RxInterface<List<T>> with ListMixin<T> {
-  RxList([List<T> value = const []]) : super(value);
+  RxList([super.value = const []]);
 
   @override
   T operator [](int index) => value[index];

@@ -7,7 +7,7 @@ class ChildConsumer extends ParentState<HomeController> {
   const ChildConsumer({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, HomeController state) {
     return CupertinoButton(
       onPressed: state.onTap,
       child: const Center(

@@ -1,41 +1,48 @@
 // ignore_for_file: public_member_api_docs, avoid_print
 //
-// Detector suite for cross-instance state leakage in `StateWidget.state`.
+// Instance-isolation suite for StateWidget.
 //
 // ---------------------------------------------------------------------------
-// THE INVARIANT UNDER TEST
+// WHAT THIS FILE USED TO TEST, AND WHY IT CHANGED
 // ---------------------------------------------------------------------------
-// Reading `state` must yield THIS instance's controller, or FAIL LOUDLY.
-// Returning another instance's controller silently is never acceptable.
+// `StateWidget.state` used to be a getter that resolved the controller from
+// ambient static state: a per-widget build stack, plus a registry keyed by
+// `identical(element.widget, widget)` as a fallback for reads evaluated after
+// build() had returned. Measured behaviour with one widget object mounted 4
+// times (a `const` widget reused on a page, e.g. a banner or a category row):
 //
-// The suite is written around that invariant on purpose, so it does not presume
-// which fix gets chosen. `threw` counts as a pass; `foreign` is the defect.
-// Whether the failure arrives at mount time or at read time, and whether the
-// API grows a BuildContext parameter, are all compatible with these tests.
+//   mounted controllers: [lex-0, lex-1, lex-2, lex-3]
+//     lex-0 rendered 4 time(s)
+//     lex-1 rendered 0 time(s)   <- alive, and unreachable from its own UI
+//     lex-2 rendered 0 time(s)
+//     lex-3 rendered 0 time(s)
 //
-// ---------------------------------------------------------------------------
-// WHY A CORRECT SILENT ANSWER IS IMPOSSIBLE
-// ---------------------------------------------------------------------------
-// `state` is a getter on the *widget*, so its only input is the widget object.
-// When one widget object is mounted N times there is no information available
-// to tell the N instances apart — the question has no answer. `build()` works
-// only because it establishes "who is building right now" via a stack; outside
-// build there is no such ambient. So the defect is not "the fallback picks the
-// wrong one", it is "an ambiguous question is answered with a silent guess".
+// The question "which of the 4 instances is asking?" had no answer: a getter's
+// only input is the widget object, and that object was shared. It was answered
+// with a silent guess — always the first-mounted instance.
 //
-// ---------------------------------------------------------------------------
-// WHEN ONE WIDGET OBJECT ENDS UP MOUNTED TWICE
-// ---------------------------------------------------------------------------
-// See canonicalization_probe_test.dart for the measurements. Summary:
-//   * A reused reference, or one const site evaluated more than once (route
-//     builder called twice, const page in a loop, const widget in a field),
-//     collides in EVERY mode.
-//   * Two separate `const Page()` expressions collide only when
-//     --track-widget-creation is off, i.e. in release/profile — NOT in the
-//     default `flutter test` or debug runs. So release is where this is worst,
-//     and a debug-only CI cannot see it.
-// This suite shares a reference (`kProbe`) so it reproduces in both modes.
-// Run it BOTH ways:
+// The fix removed the question. `build` now receives the controller:
+//
+//     Widget build(BuildContext context, T state)
+//
+// Closures created during build capture that parameter, so a read inside a
+// `builder:` or a tap callback — which runs long after build() returned — still
+// refers to the right instance. There is no ambient lookup left to get wrong.
+//
+// So the old detectors are gone: they asserted things about `widget.state`,
+// which no longer exists. Cross-instance leakage is now a compile-time
+// impossibility rather than a runtime invariant. What remains worth testing:
+//
+//   1. instance isolation at scale — the plumbing in StateElement.build()
+//      passes each element its OWN controller. If that regressed, or if an
+//      ambient lookup were reintroduced, these go red.
+//   2. deferred reads — the exact shapes that used to leak still work.
+//   3. the controller lifecycle — one initState / readyState / dispose per
+//      instance, stable identity across rebuilds, never handed out after
+//      dispose.
+//
+// Run both ways; `--no-track-widget-creation` reproduces release const
+// behaviour, where separate `const Probe()` expressions collide into one object:
 //   flutter test test/lyfe_cicle/state_identity_test.dart
 //   flutter test test/lyfe_cicle/state_identity_test.dart --no-track-widget-creation
 
@@ -44,7 +51,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:occam/occam.dart';
 
 void main() {
-  setUp(ProbeController.resetIds);
+  setUp(ProbeController.reset);
 
   test('diagnostic: which const forms end up as the same object', () {
     const inlineA = Probe();
@@ -58,22 +65,22 @@ void main() {
         ? 'MODE: release-like, separate const expressions collide too'
         : 'MODE: debug, only reused references/sites collide');
 
-    // The one guarantee the suite depends on, true in every mode.
     expect(identical(kProbe, kProbe), isTrue);
   });
 
-  group('no silent cross-talk', () {
+  group('instance isolation', () {
+    // Every scenario mounts ONE widget object several times — the setup that
+    // used to be unresolvable. Each instance must show its own data.
+
     testWidgets('2 instances of one widget object', (tester) async {
       await pumpProbes(tester, 2);
-      await expectNoCrossTalk(tester, expectedInstances: 2);
+      await expectInstanceIsolation(tester, 2);
     });
 
     testWidgets('one const site evaluated twice (route-builder pattern)',
         (tester) async {
-      // Closest shape to the real trigger: a single `const Probe()` site that
-      // the app runs more than once. No shared variable, no hand-wiring.
       await pumpHarness(tester, Column(children: [buildProbe(), buildProbe()]));
-      await expectNoCrossTalk(tester, expectedInstances: 2);
+      await expectInstanceIsolation(tester, 2);
     });
 
     testWidgets('same object mounted at different depths', (tester) async {
@@ -89,7 +96,7 @@ void main() {
           ],
         ),
       );
-      await expectNoCrossTalk(tester, expectedInstances: 2);
+      await expectInstanceIsolation(tester, 2);
     });
 
     testWidgets('instances kept alive in an IndexedStack (tab pattern)',
@@ -98,24 +105,30 @@ void main() {
         tester,
         const IndexedStack(index: 0, children: [kProbe, kProbe, kProbe]),
       );
-      await expectNoCrossTalk(tester, expectedInstances: 3);
+      // Only the selected child is painted, so assert on controllers, not text.
+      await expectDistinctControllers(tester, 3);
     });
 
     testWidgets('instances across a nested Navigator', (tester) async {
-      await pumpHarness(
-        tester,
-        Column(
-          children: [
-            kProbe,
-            Expanded(
-              child: Navigator(
-                onGenerateRoute: (_) => MaterialPageRoute(builder: (_) => kProbe),
-              ),
+      // Not pumpHarness: Expanded needs a bounded height, so no scroll view.
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Column(
+              children: [
+                kProbe,
+                Expanded(
+                  child: Navigator(
+                    onGenerateRoute: (_) =>
+                        MaterialPageRoute(builder: (_) => kProbe),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       );
-      await expectNoCrossTalk(tester, expectedInstances: 2);
+      await expectInstanceIsolation(tester, 2);
     });
 
     testWidgets('two widget types, several instances each', (tester) async {
@@ -123,208 +136,230 @@ void main() {
         tester,
         Column(children: const [kProbe, kOtherProbe, kProbe, kOtherProbe]),
       );
-      // Two objects (one per type), each mounted twice.
-      await expectNoCrossTalk(tester, expectedInstances: 4, sharedObjects: 2);
+      await settle(tester);
+      // Two widget objects, one per type, each mounted twice.
+      expect(sharedWidgetObjects(tester), 2, reason: 'scenario precondition');
+      for (final c in controllersOf(tester)) {
+        expect(find.text('${c.label}:0'), findsOneWidget,
+            reason: 'instance data leaked: ${c.label}');
+      }
     });
 
     testWidgets('survivors after a sibling unmounts', (tester) async {
       await pumpProbes(tester, 3);
-      tester.takeException();
+      await settle(tester);
       final before = controllersOf(tester).map((c) => c.id).toList();
 
-      // Drop the FIRST one: it is the instance the buggy lookup always
-      // returned, so a stale-resolution bug shows up here too.
+      // Mount one fewer. The children are unkeyed and identical, so Flutter
+      // matches them by POSITION: elements 0 and 1 are reused and the last one
+      // unmounts. Which one goes is not the point — that the survivors keep
+      // their own controllers is.
       await pumpProbes(tester, 3, skipFirst: true);
-      await expectNoCrossTalk(tester, expectedInstances: 2);
+      await expectInstanceIsolation(tester, 2);
 
-      final after = controllersOf(tester).map((c) => c.id);
-      if (after.isNotEmpty) {
-        expect(after, containsAll(before.skip(1)),
-            reason: 'survivors should be the same controllers, not fresh ones');
-      }
+      expect(controllersOf(tester).map((c) => c.id), before.take(2),
+          reason: 'survivors should be the same controllers, not fresh ones');
     });
 
     testWidgets('after a rebuild of the whole subtree', (tester) async {
       await pumpProbes(tester, 4);
-      tester.takeException();
+      await settle(tester);
       final ids = controllersOf(tester).map((c) => c.id).toList();
+
       await pumpProbes(tester, 4);
-      await expectNoCrossTalk(tester, expectedInstances: 4);
-      if (controllersOf(tester).isNotEmpty) {
-        expect(controllersOf(tester).map((c) => c.id), ids,
-            reason: 'elements should have been updated, not recreated');
-      }
+      await expectInstanceIsolation(tester, 4);
+
+      expect(controllersOf(tester).map((c) => c.id), ids,
+          reason: 'elements should have been updated, not recreated');
     });
+
+    for (final n in const [1, 2, 3, 5, 8, 16, 32]) {
+      testWidgets('$n instances stay isolated', (tester) async {
+        await pumpProbes(tester, n);
+        await expectInstanceIsolation(tester, n);
+        print('isolation n=$n -> ${controllersOf(tester).length} distinct '
+            'controllers, each rendering its own data');
+      });
+    }
   });
 
-  group('no silent cross-talk from callbacks', () {
-    testWidgets('tapping instance #k never mutates another instance',
+  group('deferred reads: the shapes that used to leak', () {
+    testWidgets('read inside a builder (the bottom_page.dart shape)',
         (tester) async {
+      // `state` is the build parameter, captured by the builder closure. The
+      // closure runs when RxWidget's own element builds — after build() has
+      // returned. That is exactly where the old registry fallback took over.
+      await pumpProbes(tester, 4);
+      await settle(tester);
+
+      final controllers = controllersOf(tester);
+      print('--- read inside builder, ${controllers.length} instances ---');
+      for (final c in controllers) {
+        print('  ${c.label} rendered '
+            '${tester.widgetList(find.text('${c.label}:0')).length} time(s)');
+      }
+
+      expect(controllers, hasLength(4));
+      for (final c in controllers) {
+        expect(find.text('${c.label}:0'), findsOneWidget,
+            reason: 'controller data leaked across instances: ${c.label}');
+      }
+    });
+
+    testWidgets('tapping instance #k mutates only instance #k', (tester) async {
       const count = 4;
       await pumpProbes(tester, count);
       await settle(tester);
-      tester.takeException();
 
       final controllers = controllersOf(tester);
-      if (controllers.length != count) {
-        // A fix that refuses to mount the ambiguous tree satisfies the
-        // invariant; there is simply nothing left to tap.
-        print('tree refused to mount ${controllers.length}/$count instances');
-        return;
-      }
+      expect(controllers, hasLength(count));
 
-      var threw = 0;
       for (var k = 0; k < count; k++) {
         final before = [for (final c in controllers) c.counter.value];
 
-        // The closure reads `state` when tapped, i.e. outside Probe.build().
+        // The callback reads the captured `state` parameter at tap time.
         await tester.tap(find.byKey(ValueKey('bump-${controllers[k].id}')));
         await tester.pump();
-        final error = tester.takeException();
-        if (error != null) threw++;
 
         final after = [for (final c in controllers) c.counter.value];
         for (var i = 0; i < count; i++) {
-          if (i == k) continue;
           expect(
             after[i],
-            before[i],
-            reason: 'tapping instance #$k mutated instance #$i '
-                '(controller ${controllers[i].id}): $before -> $after',
+            i == k ? before[i] + 1 : before[i],
+            reason: 'tapping instance #$k should bump only itself: '
+                '$before -> $after',
           );
         }
-        expect(
-          after[k],
-          anyOf(before[k] + 1, before[k]),
-          reason: 'tapping instance #$k should bump it or fail, not skip',
-        );
-        if (error == null) {
-          expect(after[k], before[k] + 1,
-              reason: 'tap on #$k neither bumped it nor raised');
-        }
       }
-      print('taps: $threw/$count raised instead of resolving');
     });
 
     testWidgets('rendered text never shows another instances counter',
         (tester) async {
       await pumpProbes(tester, 3);
       await settle(tester);
-      tester.takeException();
       final controllers = controllersOf(tester);
-      if (controllers.length != 3) return;
 
       await tester.tap(find.byKey(ValueKey('bump-${controllers[2].id}')));
       await tester.pump();
-      final error = tester.takeException();
 
-      // Labels are built from the controller resolved during build (correct
-      // path), so a wrong counter surfacing under a label means leakage.
-      expect(find.text('${controllers[0].id}:0'), findsOneWidget);
-      expect(find.text('${controllers[1].id}:0'), findsOneWidget);
-      expect(
-        find.text('${controllers[2].id}:${error == null ? 1 : 0}'),
-        findsOneWidget,
-      );
+      expect(find.text('${controllers[0].label}:0'), findsOneWidget);
+      expect(find.text('${controllers[1].label}:0'), findsOneWidget);
+      expect(find.text('${controllers[2].label}:1'), findsOneWidget);
     });
   });
 
-  group('control: unambiguous resolution keeps working', () {
-    // These pass today. They are the regression net: a fix must not break the
-    // cases that were never ambiguous. NOTE: dropping the outside-build
-    // fallback entirely would turn these red — that is the trade-off to weigh.
-    testWidgets('a single instance resolves its own controller',
-        (tester) async {
-      await pumpProbes(tester, 1);
-      await expectNoCrossTalk(tester, expectedInstances: 1, sharedObjects: 1);
-      final element = stateElementsOf(tester).single;
-      expect(element.widget.state, same(element.state),
-          reason: 'one mounted instance is unambiguous and must resolve');
-    });
+  group('control: the controller lifecycle must not change', () {
+    // A hard constraint on the design: the controller is created by
+    // StatefulElement (one per ELEMENT, via createState) and disposed in
+    // unmount. Nothing about how it is *delivered* to build may change that.
 
-    testWidgets('distinct Keys give distinct identities', (tester) async {
-      await pumpHarness(
-        tester,
-        Column(
-          children: const [
-            Probe(key: Key('a')),
-            Probe(key: Key('b')),
-            Probe(key: Key('c')),
-          ],
-        ),
-      );
-      await settle(tester);
-      for (final element in stateElementsOf(tester)) {
-        expect(element.widget.state, same(element.state),
-            reason: 'keyed instances are distinct objects and must resolve');
-      }
-    });
-  });
-
-  group('control: readyState() delivery', () {
-    // Expected to pass before and after: performRebuild() reads
-    // `StatefulElement.state` (the element's own controller), not
-    // `widget.state`, so it never goes through the ambiguous path. Kept as a
-    // guard against a fix rerouting it through the resolver.
-    testWidgets('each instance receives exactly one readyState()',
+    testWidgets('one initState, one readyState, one dispose per instance',
         (tester) async {
       await pumpProbes(tester, 5);
       await settle(tester);
-      tester.takeException();
-      final controllers = controllersOf(tester);
-      if (controllers.isEmpty) return;
+      final mounted = controllersOf(tester).length;
 
-      final report = {for (final c in controllers) c.id: c.readyStateCount};
-      expect(report.values, everyElement(1),
-          reason: 'readyState() must be delivered once, to its own instance. '
-              'Got id -> calls: $report');
+      await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+      await settle(tester);
+
+      expect(controllersOf(tester), isEmpty, reason: 'tree should be gone');
+      expect(ProbeController.created, hasLength(mounted),
+          reason: 'exactly one controller per mounted element — no extras, no '
+              'reuse. Got ${ProbeController.created.length} for $mounted');
+
+      for (final c in ProbeController.created) {
+        expect(c.initStateCount, 1, reason: 'controller#${c.id} initState');
+        expect(c.readyStateCount, 1, reason: 'controller#${c.id} readyState');
+        expect(c.disposeCount, 1, reason: 'controller#${c.id} dispose');
+      }
     });
-  });
 
-  group('scale sweep', () {
-    // Benchmark of the blast radius. Today: N-1 of N instances read a foreign
-    // controller. After a fix: 0 foreign, whatever the mix of own/threw.
-    for (final n in const [1, 2, 3, 5, 8, 16, 32]) {
-      testWidgets('$n instances of one widget object', (tester) async {
-        await pumpProbes(tester, n);
-        await settle(tester);
-        tester.takeException();
+    testWidgets('readyState runs once, after initState and after first build',
+        (tester) async {
+      await pumpProbes(tester, 3);
+      await settle(tester);
 
-        final reports = resolutionReports(tester);
-        final foreign = reports.where((r) => r.kind == Resolution.foreign);
-        final threw = reports.where((r) => r.kind == Resolution.threw);
-        final own = reports.where((r) => r.kind == Resolution.own);
-        print('sweep n=$n -> ${foreign.length} foreign, ${threw.length} threw, '
-            '${own.length} own (of ${reports.length} mounted)');
-
+      for (final c in controllersOf(tester)) {
+        final log = c.log;
+        expect(log.first, 'init', reason: 'controller#${c.id}: $log');
+        expect(log.where((e) => e == 'init'), hasLength(1), reason: '$log');
+        expect(log.where((e) => e == 'ready'), hasLength(1), reason: '$log');
+        expect(log, contains('build'), reason: 'controller#${c.id}: $log');
         expect(
-          foreign,
-          isEmpty,
-          reason: '$n instances mounted, ${foreign.length} silently read a '
-              'foreign controller:\n${foreign.join('\n')}',
+          log.indexOf('ready'),
+          greaterThan(log.indexOf('build')),
+          reason: 'readyState() must arrive after the first build, so context '
+              'is safe. controller#${c.id}: $log',
         );
-      });
-    }
+      }
+    });
+
+    testWidgets('rebuilding keeps the same controller instance',
+        (tester) async {
+      await pumpProbes(tester, 4);
+      await settle(tester);
+      final before = {for (final e in stateElementsOf(tester)) e: e.state};
+      expect(before, isNotEmpty);
+
+      await pumpProbes(tester, 4);
+      await settle(tester);
+
+      final after = {for (final e in stateElementsOf(tester)) e: e.state};
+      expect(after.keys, unorderedEquals(before.keys),
+          reason: 'elements should have been updated, not recreated');
+      for (final element in after.keys) {
+        expect(after[element], same(before[element]),
+            reason: 'the controller changed identity across a rebuild');
+      }
+      for (final c in ProbeController.created) {
+        expect(c.initStateCount, 1,
+            reason: 'controller#${c.id} was re-initialised on rebuild');
+        expect(c.readyStateCount, 1,
+            reason: 'controller#${c.id} got a second readyState');
+      }
+    });
+
+    testWidgets('a mounted element never owns a disposed controller',
+        (tester) async {
+      await pumpProbes(tester, 4);
+      await settle(tester);
+
+      await pumpProbes(tester, 4, skipFirst: true);
+      await settle(tester);
+
+      final disposed =
+          ProbeController.created.where((c) => c.disposeCount > 0).toList();
+      expect(disposed, isNotEmpty,
+          reason: 'the scenario is supposed to dispose one controller; if none '
+              'was disposed it proves nothing');
+
+      for (final c in controllersOf(tester)) {
+        expect(c.disposeCount, 0,
+            reason: 'a mounted element owns disposed controller#${c.id}');
+      }
+    });
+
+    testWidgets('dispose is the last thing that happens to a controller',
+        (tester) async {
+      await pumpProbes(tester, 2);
+      await settle(tester);
+
+      await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+      await settle(tester);
+
+      for (final c in ProbeController.created) {
+        expect(c.disposeCount, 1, reason: 'controller#${c.id}');
+        expect(c.log.last, 'dispose',
+            reason: 'something ran on controller#${c.id} after dispose: '
+                '${c.log}');
+      }
+    });
   });
 }
 
 // ---------------------------------------------------------------------------
 // Harness
 // ---------------------------------------------------------------------------
-
-enum Resolution { own, foreign, threw }
-
-class ResolutionReport {
-  final int index;
-  final Type widgetType;
-  final Resolution kind;
-  final String detail;
-
-  ResolutionReport(this.index, this.widgetType, this.kind, this.detail);
-
-  @override
-  String toString() => '  element #$index ($widgetType) $detail';
-}
 
 Future<void> pumpHarness(WidgetTester tester, Widget child) {
   return tester.pumpWidget(
@@ -333,25 +368,22 @@ Future<void> pumpHarness(WidgetTester tester, Widget child) {
 }
 
 /// Mounts [n] probe instances, all the *same* object ([kProbe]), which is the
-/// whole point. [skipFirst] drops the first one to exercise unmount.
+/// whole point. [skipFirst] mounts one fewer, to exercise unmount — the
+/// children are unkeyed and identical, so Flutter matches them by position and
+/// it is the LAST element that goes, whichever list entry was dropped.
 Future<void> pumpProbes(WidgetTester tester, int n, {bool skipFirst = false}) {
-  final children = <Widget>[
-    for (var i = skipFirst ? 1 : 0; i < n; i++) kProbe,
-  ];
-  return pumpHarness(tester, Column(children: children));
+  return pumpHarness(
+    tester,
+    Column(children: [for (var i = skipFirst ? 1 : 0; i < n; i++) kProbe]),
+  );
 }
 
 /// A single `const Probe()` expression site, invoked repeatedly — the shape a
 /// route builder or page factory has in real code.
 Widget buildProbe() => const Probe();
 
-/// Settles, tolerating a fix that raises while mounting an ambiguous tree.
 Future<void> settle(WidgetTester tester) async {
-  try {
-    await tester.pumpAndSettle();
-  } catch (_) {
-    // Mount-time refusal is an acceptable outcome; recorded by the caller.
-  }
+  await tester.pumpAndSettle();
 }
 
 Iterable<StateElement> stateElementsOf(WidgetTester tester) =>
@@ -362,89 +394,50 @@ List<ProbeController> controllersOf(WidgetTester tester) => [
         if (e.state is ProbeController) e.state as ProbeController,
     ];
 
-/// Reads `element.widget.state` — the public getter, from outside any build() —
-/// for every mounted instance, and classifies the outcome.
-List<ResolutionReport> resolutionReports(WidgetTester tester) {
-  final elements = stateElementsOf(tester).toList();
-  final reports = <ResolutionReport>[];
-  for (var i = 0; i < elements.length; i++) {
-    final element = elements[i];
-    final own = element.state;
-    try {
-      final resolved = element.widget.state;
-      reports.add(
-        identical(resolved, own)
-            ? ResolutionReport(i, element.widget.runtimeType, Resolution.own,
-                'resolved its own ${describe(own)}')
-            : ResolutionReport(i, element.widget.runtimeType,
-                Resolution.foreign,
-                'owns ${describe(own)} but `widget.state` silently resolved '
-                '${describe(resolved)}'),
-      );
-    } catch (error) {
-      reports.add(ResolutionReport(i, element.widget.runtimeType,
-          Resolution.threw, 'raised instead of guessing: $error'));
-    }
+/// How many distinct widget objects the mounted StateWidgets share. The
+/// scenarios are only meaningful when this is smaller than the instance count.
+int sharedWidgetObjects(WidgetTester tester) => stateElementsOf(tester)
+    .map((e) => identityHashCode(e.widget))
+    .toSet()
+    .length;
+
+/// [n] elements sharing ONE widget object, each with its own controller, each
+/// rendering its own data exactly once.
+Future<void> expectInstanceIsolation(WidgetTester tester, int n) async {
+  await settle(tester);
+  await expectDistinctControllers(tester, n);
+
+  for (final c in controllersOf(tester)) {
+    expect(
+      find.text('${c.label}:0'),
+      findsOneWidget,
+      reason: 'instance data leaked. Each of $n instances should render its '
+          'own label exactly once; ${c.label} did not.',
+    );
   }
-  return reports;
 }
 
-/// The core assertion: nobody silently reads someone else's controller.
-///
-/// [sharedObjects] is how many distinct widget objects the scenario intends to
-/// mount (one per widget type by default). It guards against a scenario that
-/// passes vacuously because the widgets turned out to be distinct objects and
-/// could never have been confused in the first place.
-Future<void> expectNoCrossTalk(
-  WidgetTester tester, {
-  required int expectedInstances,
-  int? sharedObjects,
-}) async {
+/// The structural half of isolation, for scenarios where not every instance is
+/// painted (IndexedStack) and text cannot be asserted.
+Future<void> expectDistinctControllers(WidgetTester tester, int n) async {
   await settle(tester);
-  final mountError = tester.takeException();
-
   final elements = stateElementsOf(tester).toList();
-  if (mountError != null && elements.length < expectedInstances) {
-    // A fix that refuses to build the ambiguous tree satisfies the invariant.
-    print('mount refused (${elements.length}/$expectedInstances mounted): '
-        '$mountError');
-    return;
-  }
 
-  expect(elements, hasLength(expectedInstances),
+  expect(elements, hasLength(n),
       reason: 'harness mounted the wrong number of StateWidgets');
-
-  final distinctWidgets =
-      elements.map((e) => identityHashCode(e.widget)).toSet().length;
-  final intended =
-      sharedObjects ?? elements.map((e) => e.widget.runtimeType).toSet().length;
   expect(
-    distinctWidgets,
-    intended,
-    reason: 'this scenario is supposed to mount $expectedInstances elements '
-        'sharing $intended widget object(s), but found $distinctWidgets '
-        'distinct objects. It does not reproduce the ambiguity it was written '
-        'for, so passing would mean nothing.',
+    sharedWidgetObjects(tester),
+    lessThan(n == 1 ? 2 : n),
+    reason: 'this scenario is supposed to mount $n elements sharing one widget '
+        'object. If they are all distinct objects it does not reproduce the '
+        'setup it was written for, so passing would mean nothing.',
   );
-
   expect(
     elements.map((e) => identityHashCode(e.state)).toSet(),
-    hasLength(expectedInstances),
+    hasLength(n),
     reason: 'two elements share one controller',
   );
-
-  final foreign =
-      resolutionReports(tester).where((r) => r.kind == Resolution.foreign);
-  expect(
-    foreign,
-    isEmpty,
-    reason: 'state leaked across instances — a silently wrong controller was '
-        'returned:\n${foreign.join('\n')}',
-  );
 }
-
-String describe(State state) =>
-    state is ProbeController ? 'controller#${state.id}' : '$state';
 
 // ---------------------------------------------------------------------------
 // Probes
@@ -458,27 +451,70 @@ const kOtherProbe = OtherProbe();
 
 class ProbeController extends StateController {
   static int _nextId = 0;
-  static void resetIds() => _nextId = 0;
+
+  /// Every controller ever created in the current test, disposed ones included.
+  /// A disposed controller is unreachable from the element tree, so auditing
+  /// "was it disposed exactly once" needs a ledger that outlives it.
+  static final List<ProbeController> created = [];
+
+  /// Ordered lifecycle log, e.g. `['0:init', '0:build', '0:ready']`.
+  static final List<String> events = [];
+
+  static void reset() {
+    _nextId = 0;
+    created.clear();
+    events.clear();
+  }
 
   final int id = _nextId++;
   final counter = 0.rx;
+  int initStateCount = 0;
   int readyStateCount = 0;
+  int disposeCount = 0;
+
+  ProbeController() {
+    created.add(this);
+  }
+
+  /// Per-instance data: what must never surface under another instance.
+  String get label => 'probe-$id';
+
+  /// This controller's events, in order, without the id prefix.
+  List<String> get log => [
+        for (final e in events)
+          if (e.startsWith('$id:')) e.substring('$id:'.length),
+      ];
+
+  @override
+  void initState() {
+    initStateCount++;
+    events.add('$id:init');
+    super.initState();
+  }
 
   @override
   void readyState() {
     readyStateCount++;
+    events.add('$id:ready');
     super.readyState();
   }
+
+  void noteBuild() => events.add('$id:build');
 
   void bump() => counter.value += 1;
 
   @override
   void dispose() {
+    disposeCount++;
+    events.add('$id:dispose');
     counter.dispose();
     super.dispose();
   }
 }
 
+/// Reads its controller only through the `state` parameter, and does so from
+/// inside a `builder:` closure and a tap callback — both evaluated after
+/// build() has returned. These are the exact shapes that used to leak.
 class Probe extends StateWidget<ProbeController> {
   const Probe({super.key});
 
@@ -486,23 +522,25 @@ class Probe extends StateWidget<ProbeController> {
   ProbeController createState() => ProbeController();
 
   @override
-  Widget build(BuildContext context) {
-    // Resolved via the build stack: this path is expected to be correct.
-    final own = state;
+  Widget build(BuildContext context, ProbeController state) {
+    state.noteBuild();
     return RxWidget<int>(
-      notifier: own.counter,
-      builder: (context, value) => TextButton(
-        key: ValueKey('bump-${own.id}'),
-        // Read at tap time, from outside Probe.build().
+      notifier: state.counter,
+      builder: (ctx, value) => TextButton(
+        key: ValueKey('bump-${state.id}'),
         onPressed: () => state.bump(),
-        child: Text('${own.id}:$value'),
+        child: Text('${state.label}:$value'),
       ),
     );
   }
 }
 
-class OtherProbeController extends ProbeController {}
+class OtherProbeController extends ProbeController {
+  @override
+  String get label => 'other-$id';
+}
 
+/// A second widget type, so scenarios can mix two shared widget objects.
 class OtherProbe extends StateWidget<OtherProbeController> {
   const OtherProbe({super.key});
 
@@ -510,14 +548,14 @@ class OtherProbe extends StateWidget<OtherProbeController> {
   OtherProbeController createState() => OtherProbeController();
 
   @override
-  Widget build(BuildContext context) {
-    final own = state;
+  Widget build(BuildContext context, OtherProbeController state) {
+    state.noteBuild();
     return RxWidget<int>(
-      notifier: own.counter,
-      builder: (context, value) => TextButton(
-        key: ValueKey('bump-${own.id}'),
+      notifier: state.counter,
+      builder: (ctx, value) => TextButton(
+        key: ValueKey('bump-${state.id}'),
         onPressed: () => state.bump(),
-        child: Text('${own.id}:$value'),
+        child: Text('${state.label}:$value'),
       ),
     );
   }

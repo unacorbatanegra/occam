@@ -11,7 +11,7 @@ class HomePage extends StateWidget<HomeController> {
   HomeController createState() => HomeController();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, HomeController state) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Occam Demo'),

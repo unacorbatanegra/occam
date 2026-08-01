@@ -8,7 +8,7 @@ class Page1 extends StateWidget<Page1Controller> {
   Page1Controller createState() => Page1Controller();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, Page1Controller state) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Page 1'),
@@ -22,7 +22,7 @@ class Page1Controller extends StateController<Page1>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return widget.build(context);
+    return widget.build(context, this);
   }
 
   @override
@@ -36,7 +36,7 @@ class Page2 extends StateWidget<Page2Controller> {
   Page2Controller createState() => Page2Controller();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, Page2Controller state) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Page 2'),
@@ -50,7 +50,7 @@ class Page2Controller extends StateController<Page2>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return widget.build(context);
+    return widget.build(context, this);
   }
 
   @override

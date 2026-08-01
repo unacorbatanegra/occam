@@ -53,7 +53,7 @@ class MyPage extends StateWidget<MyPageController> {
   MyPageController createState() => MyPageController();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, MyPageController state) {
     return RxWidget(
       key: const Key('rx'),
       notifier: state.counter,

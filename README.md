@@ -52,8 +52,10 @@ class HomePage extends StateWidget<HomeController> {
   @override
   HomeController createState() => HomeController();
 
+  /// The controller for *this* instance is passed in, so a widget mounted
+  /// several times never sees another instance's state.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, HomeController state) {
        return Scaffold(
       appBar: AppBar(
         title: const Text('Occam Demo'),

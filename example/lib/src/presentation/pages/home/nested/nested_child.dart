@@ -13,7 +13,7 @@ class NestedChild extends StateWidget<NestedController> {
   NestedController createState() => NestedController();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, NestedController state) {
     // print('build happen');
     return Column(
       children: [
@@ -37,7 +37,7 @@ class TestStateless extends ParentState<HomeController> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, HomeController state) {
     return ElevatedButton(
       onPressed: state.onTestStateless,
       child: Text('This is a test'),

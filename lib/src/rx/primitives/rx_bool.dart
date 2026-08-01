@@ -1,7 +1,7 @@
-part of occam;
+part of '../../../occam.dart';
 
 class RxBool extends RxInterface<bool> {
-  RxBool(bool value) : super(value);
+  RxBool(super.value);
 
   /// The logical conjunction ("and") of this and [other].
   ///

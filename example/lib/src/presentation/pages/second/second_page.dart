@@ -10,7 +10,7 @@ class SecondPage extends StateWidget<SecondController> {
   SecondController createState() => SecondController();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(context, state) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Second Page'),

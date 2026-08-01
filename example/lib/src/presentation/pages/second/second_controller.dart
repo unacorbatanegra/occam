@@ -5,13 +5,7 @@ class SecondController extends StateController {
   final list = <String>[].rx;
   final counter = 1.rx;
   @override
-  void readyState() {
-    print(navArgs);
-    notifier.value = navArgs as String;
-
-    // Future.delayed(
-    //     const Duration(seconds: 2), () => notifier.value = 'late changed');
-  }
+  void readyState() {}
 
   void back() {
     list.add(DateTime.now().toIso8601String());

@@ -1,4 +1,4 @@
-part of occam;
+part of '../../../occam.dart';
 
 extension RxExtension<T> on T {
   Rx<T> get rx => Rx<T>(this);

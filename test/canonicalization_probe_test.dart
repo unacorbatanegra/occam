@@ -113,7 +113,8 @@ void main() {
     expect(identical(plainA, plainA), isTrue);
     expect(identical(probeA, probeA), isTrue);
     expect(identical(constProbe(), constProbe()), isTrue,
-        reason: 'one const site evaluated twice must yield one object — this is '
+        reason:
+            'one const site evaluated twice must yield one object — this is '
             'what makes the bug reachable even in debug mode');
     expect(identical(const Plain(1), const Plain(2)), isFalse);
     expect(identical(const Probe(), const Probe(key: Key('a'))), isFalse);
@@ -150,7 +151,7 @@ class Probe extends StateWidget<ProbeController> {
   ProbeController createState() => ProbeController();
 
   @override
-  Widget build(BuildContext context) => const SizedBox();
+  Widget build(BuildContext context, ProbeController state) => const SizedBox();
 }
 
 class ProbeController extends StateController {}

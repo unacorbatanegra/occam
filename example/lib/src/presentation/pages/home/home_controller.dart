@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:occam/occam.dart';
 
 class HomeController extends StateController {
@@ -16,7 +17,7 @@ class HomeController extends StateController {
   }
 
   void toSecondPage() async {
-    final result = await navigator.pushNamed(
+    final result = await Navigator.of(context).pushNamed(
       '/secondPage',
       arguments: 'test arguments',
     );
@@ -48,7 +49,7 @@ class HomeController extends StateController {
   }
 
   void toBottom() {
-    navigator.pushNamed('/bottom');
+    Navigator.of(context).pushNamed('/bottom');
   }
 }
 

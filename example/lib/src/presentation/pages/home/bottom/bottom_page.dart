@@ -10,7 +10,7 @@ class BottomPage extends StateWidget<BottomController> {
   BottomController createState() => BottomController();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, BottomController state) {
     return Scaffold(
       body: RxWidget<int>(
         notifier: state.currentIndex,

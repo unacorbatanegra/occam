@@ -9,12 +9,12 @@ class RxWidget<T> extends StatefulWidget {
     required this.notifier,
     required this.builder,
   });
-  
+
   @override
-  _RxWidgetState createState() => _RxWidgetState<T>();
+  RxWidgetState<T> createState() => RxWidgetState<T>();
 }
 
-class _RxWidgetState<T> extends State<RxWidget<T>> {
+class RxWidgetState<T> extends State<RxWidget<T>> {
   late T value;
 
   @override
@@ -45,5 +45,8 @@ class _RxWidgetState<T> extends State<RxWidget<T>> {
     super.dispose();
   }
 
-  void _update() => setState(() => value = widget.notifier.value);
+  void _update() {
+    if (!mounted) return;
+    setState(() => value = widget.notifier.value);
+  }
 }
