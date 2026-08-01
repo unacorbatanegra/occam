@@ -27,7 +27,7 @@ mixin RxMixin<T> on ValueNotifier<T> {
     value = fn(super.value);
   }
 
-  final Map<Stream, StreamSubscription> _subscriptions = {};
+  final Map<Stream<T>, StreamSubscription<T>> _subscriptions = {};
 
   final _listeners = <VoidCallback>[];
 
@@ -68,7 +68,7 @@ mixin RxMixin<T> on ValueNotifier<T> {
   void bindStream(Stream<T> stream) {
     closeStream(stream);
 
-    late StreamSubscription subscription;
+    late StreamSubscription<T> subscription;
 
     subscription = stream.asBroadcastStream().listen(
       (event) => value = event,

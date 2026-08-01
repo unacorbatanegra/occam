@@ -1,0 +1,34 @@
+version: 2
+
+updates:
+  # Library dependencies.
+  - package-ecosystem: pub
+    directory: /
+    schedule:
+      interval: daily
+      time: '06:00'
+      timezone: America/Argentina/Buenos_Aires
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'deps'
+    # Security updates always come through regardless of this filter.
+    ignore:
+      - dependency-name: '*'
+        update-types: [version-update:semver-patch]
+
+  # Example app has its own lockfile.
+  - package-ecosystem: pub
+    directory: /example
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: 'deps(example)'
+
+  # Keeps the actions in .github/workflows pinned and current.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: 'ci'

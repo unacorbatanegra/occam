@@ -1,15 +1,15 @@
-part of occam;
+part of '../../occam.dart';
 
 class RxWidget<T> extends StatefulWidget {
   final RxInterface<T> notifier;
   final Widget Function(BuildContext context, T value) builder;
 
   const RxWidget({
-    Key? key,
+    super.key,
     required this.notifier,
     required this.builder,
-  }) : super(key: key);
-
+  });
+  
   @override
   _RxWidgetState createState() => _RxWidgetState<T>();
 }

@@ -1,0 +1,52 @@
+name: security
+
+on:
+  schedule:
+    # 06:00 UTC daily (~03:00 ART)
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  dependencies:
+    name: dependency advisories
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Official image; no license key required, unlike the gitleaks action.
+      - name: OSV-Scanner
+        run: |
+          docker run --rm -v "${PWD}:/src" -w /src \
+            ghcr.io/google/osv-scanner:latest scan source -r /src
+
+  analyze:
+    name: strict analyze + tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      # Fails on close_sinks / cancel_subscriptions, escalated to errors in
+      # analysis_options.yaml — the leak class this package is prone to.
+      - name: Analyze
+        run: flutter analyze ./lib ./test
+
+      - name: Test
+        run: flutter test
+
+      # Informational: never fails the build, just surfaces drift in the log.
+      - name: Outdated dependencies
+        if: always()
+        run: flutter pub outdated || true
