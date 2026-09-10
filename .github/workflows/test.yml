@@ -1,32 +1,112 @@
 name: flutter test
+
 on:
   push:
     branches:
       - master
-jobs:
-  build_and_deploy:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./
-    steps:
-      - uses: actions/checkout@v2
-      - uses: dart-lang/setup-dart@v1
-      - uses: subosito/flutter-action@v1
-        with:
-          flutter-version: '3.35.6'
-          channel: 'stable'
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # 06:00 UTC every Monday — benchmarks job only (guarded by event_name
+    # below), everything else already runs on every push/PR.
+    - cron: '0 6 * * 1'
 
-      - name: Verify formatting
-        run: dart format --output=none --set-exit-if-changed ./lib ./test    
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # No pinned flutter-version: pubspec.lock requires Dart >= 3.10, so a
+      # pinned older SDK breaks resolution. Track stable instead.
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
 
       - name: Install dependencies
         run: flutter pub get
-      
+
+      # Must run after `pub get`: analysis_options.yaml's `include:` points at
+      # package:flutter_lints, and dart format silently falls back to
+      # different formatting rules when it can't resolve that — every file
+      # would spuriously show up as "needing" a reformat before the packages
+      # are fetched.
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed ./lib ./test
+
+      # --fatal-infos: most lints (public_member_api_docs, avoid_print, the
+      # strict-*-types modes) register at INFO severity, which flutter
+      # analyze does not fail the build on by default — without this flag
+      # they show up in the log and nowhere else.
       - name: Analyze project source
-        run: flutter analyze ./lib ./test
+        run: flutter analyze --fatal-infos ./lib ./test
+
+      - name: Run tests with coverage
+        run: flutter test --coverage
+
+      # test_cov_console --pass only PRINTS PASSED/FAILED, it does not set a
+      # process exit code — grep for the word ourselves so a drop below 100%
+      # actually fails the job instead of only showing up in the log.
+      # occam.dart/occam_debug.dart are excluded: they have no instrumentable
+      # lines (library directives / a single static field), so lcov reports
+      # them as "no unit testing" and would otherwise drag the total down.
+      - name: Enforce 100% coverage
+        run: |
+          dart run test_cov_console --file=coverage/lcov.info \
+            --exclude=occam.dart,occam_debug.dart --pass=100 | tee coverage/report.txt
+          grep -q FAILED coverage/report.txt && exit 1 || true
+
+      - name: Verify the package is publishable
+        run: dart pub publish --dry-run
+
+  example:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        working-directory: example
+        run: flutter pub get
+
+      # See the root `test` job's comment: must run after `pub get`.
+      - name: Verify formatting
+        working-directory: example
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze
+        working-directory: example
+        run: flutter analyze .
 
       - name: Run tests
+        working-directory: example
         run: flutter test
 
- 
+  benchmarks:
+    # Manual or weekly only — timing numbers are too CI-runner-dependent to
+    # gate every push/PR on; this job never fails the build, it just prints.
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Run benchmarks
+        run: |
+          flutter test benchmark/rx_notifier_benchmark.dart
+          flutter test benchmark/rx_list_benchmark.dart
+          flutter test benchmark/widget_benchmark.dart

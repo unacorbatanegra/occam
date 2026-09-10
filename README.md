@@ -5,180 +5,186 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.0+-blue.svg)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.0+-blue.svg)](https://dart.dev)
 
-Minimalist state management for Flutter based on native StatefulWidget.
+A simple state manager built on native Flutter `StatefulWidget`, made for my own projects.
+
+## Contents
+
+- [Philosophy](#philosophy)
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [State manager](#state-manager)
+- [Sharing a controller: `ParentState`](#sharing-a-controller-parentstate)
+- [Rx types](#rx-types)
 
 ## Philosophy
 
-Occam follows the principle of **"Occam's Razor"** - the simplest solution is often the best. In a world of complex state management solutions, Occam provides:
+There are plenty of state managers, and picking one is hard — each has features you like and
+others you don't. As a package grows, it tends to accumulate code for things a given project
+never uses: a dependency full of pieces reinventing the wheel for needs you don't have. This
+exists because I kept ending up back at one belief: **the best abstraction is the one you can
+hold entirely in your head, six months later, without re-reading its source.** Not the one
+with the most features — the smallest one that's still enough. That's the name: Occam's
+razor, don't multiply entities beyond necessity.
 
-- **Minimal API surface** - Only what you need, nothing more
-- **Native Flutter patterns** - Built on StatefulWidget, not against it
-- **Explicit over implicit** - Clear lifecycle management and disposal
-- **One way to do things** - Reduces decision fatigue and cognitive load
+Every design decision in this package answers to that one question — does this make the
+mental model bigger, or does it stay the same size? In practice that means:
 
-### Why Occam?
+- **Exactly one way to do each thing.** One way to hold logic (`StateController`), one way to
+  render it (`StateWidget`), one way to share it with descendants (`ParentState`), one way to
+  react to a value changing (`RxWidget`). Never two competing patterns for the same job —
+  every "which do I use here?" is a bit of mental model that didn't need to exist.
+- **A boundary you cannot blur.** View and controller are separate *classes*, not just separate
+  responsibilities you're trusting yourself to respect. There's no widget-building path with
+  access to your logic's internals, and no controller method that receives a `BuildContext`
+  it isn't explicitly handed — the split is enforced by the type system, not by convention.
+- **Nothing is implicit.** Reactivity only exists where you write `RxWidget`; disposal is
+  always the caller's, never automatic; a controller is always looked up by explicit type,
+  never by ambient/global state. If you can't point at the line responsible for a behavior,
+  something is wrong with the library, not with your understanding of it.
 
-Most state management packages grow complex over time, accumulating features that most projects don't need. Occam stays focused on the essentials:
+Every other section below is that same idea applied to one concrete piece of the API — if
+something here feels like it's doing more than it needs to, that's a bug in the library, not
+a feature you're missing.
 
-1. **Clean separation** of UI and business logic
-2. **Reactive updates** without magic or hidden complexity  
-3. **Memory safety** through explicit disposal patterns
-4. **Familiar patterns** that Flutter developers already know
+> This started as a package for my own use, so the API can still change between versions —
+> check `CHANGELOG.md` before upgrading.
 
-## Core Concept
+## Installation
 
-**1 View = 1 Controller**
-
-- **View**: Pure UI widgets, no business logic
-- **Controller**: All logic, no widgets
-- **Reactive**: Simple reactive types with explicit disposal
-
-## Quick Start
-
-### 1. Add to pubspec.yaml
 ```yaml
 dependencies:
-  occam: ^1.0.2
+  occam: ^2.0.1
 ```
 
-### 2. Create a Page
+## Quick start
+
 ```dart
 class HomePage extends StateWidget<HomeController> {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   HomeController createState() => HomeController();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, HomeController state) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Occam Demo')),
       floatingActionButton: FloatingActionButton(
-        onPressed: state.increment,
+        onPressed: state.onButton,
         child: const Icon(Icons.add),
       ),
-      body: Center(
-        child: RxWidget<int>(
-          notifier: state.counter,
-          builder: (context, value) => Text('Count: $value'),
-        ),
+      body: RxWidget<int>(
+        notifier: state.counter,
+        builder: (ctx, value) => Text('$value'),
       ),
     );
   }
 }
-```
 
-### 3. Create a Controller
-```dart
-class HomeController extends StateController {
-  final counter = 0.rx;
+class HomeController extends StateController<HomePage> {
+  final counter = 1.rx;
 
-  @override
-  void initState() {
-    super.initState();
-    // Widget mounted
-  }
-
-  @override
-  void readyState() {
-    // Context is safe here
-  }
-
-  void increment() {
-    counter.value++;
-  }
+  void onButton() => counter.value++;
 
   @override
   void dispose() {
-    counter.dispose(); // Always dispose reactive types
+    counter.dispose(); // you own disposal of every Rx you create
     super.dispose();
   }
 }
 ```
 
-## Reactive Types
+One view (`StateWidget`), one controller (`StateController`), one reactive value
+(`.rx`) wrapped in the one widget that rebuilds (`RxWidget`). That's the whole package —
+the rest of this README is those same four pieces in more detail.
+
+## State manager
+
+`StateWidget<T>` is a `StatefulWidget` paired with a `StateController<T>`. The controller for
+*this instance* is passed into `build` as a parameter — never looked up from ambient state —
+so a widget mounted several times (a `const` banner reused across a page) can never read
+another instance's data.
+
+| Hook | When | Use for |
+|---|---|---|
+| `initState()` | widget mounted, context **not** safe | plain field setup |
+| `readyState()` | post-frame after first build, context **safe** | `ModalRoute.of`, `Theme.of`, navigation |
+| `dispose()` | teardown | disposing every `Rx` you created |
 
 ```dart
-// Create reactive variables
-final count = 0.rx;
-final name = 'John'.rx;
-final isActive = true.rx;
-final items = <String>[].rx;
+class HomeController extends StateController<HomePage> {
+  final counter = 1.rx;
 
-// Update values
-count.value = 10;
-name.value = 'Jane';
-isActive.value = false;
-items.value.add('item');
+  void onButton() => counter.value++;
 
-// Listen to changes with RxWidget
+  @override
+  void readyState() {
+    // Runs after the first frame, so context is safe here — unlike
+    // initState(). Use it for ModalRoute.of, Theme.of, etc.
+  }
+
+  @override
+  void dispose() {
+    counter.dispose();
+    super.dispose();
+  }
+}
+```
+
+## Sharing a controller: `ParentState`
+
+A child that needs an *ancestor's* controller instead of its own extends `ParentState<T>`
+— the nearest matching `StateWidget<T>` above it in the tree provides it:
+
+```dart
+class ChildConsumer extends ParentState<HomeController> {
+  const ChildConsumer({super.key});
+
+  @override
+  Widget build(BuildContext context, HomeController state) =>
+      TextButton(onPressed: state.onButton, child: const Text('increment'));
+}
+```
+
+## Rx types
+
+`RxInterface<T>` is a `ValueNotifier<T>` with extra listener/stream bookkeeping, so it
+interops with anything in Flutter that takes a `Listenable`/`ValueNotifier`.
+
+```dart
+final counter = 1.rx;               // Rx<int>          via extension
+final flag    = false.rx;           // RxBool
+final items   = <String>[].rx;      // RxList<String>
+final model   = Rx<Model>(Model()); // explicit
+```
+
+| Member | Behavior |
+|---|---|
+| `value` setter | skips notifying when the new value equals the current one |
+| `call([newValue])` | `counter(5)` sets, `counter()` reads — usable directly as a callback |
+| `refresh()` | forces a notify; needed after mutating a field *inside* the held object |
+| `update((v) => …)` | functional set |
+| `addValueListener` / `removeValueListener` | typed `ValueChanged<T>` listeners |
+| `bindStream(stream)` / `closeStream(stream)` | pipes a stream into the value |
+| `disposed` | `true` after `dispose()` |
+
+`RxBool` adds logical operators (`&`, `|`, `^`, `toggle()`); `RxList<T>` behaves like a
+`List<T>` and notifies on any mutation.
+
+`RxWidget<T>` is the only widget that listens — keep it as tight around the changing subtree
+as possible:
+
+```dart
 RxWidget<int>(
-  notifier: count,
-  builder: (context, value) => Text('$value'),
+  notifier: state.counter,
+  builder: (ctx, value) => Text('$value'),
 )
 ```
 
-## Lifecycle Methods
+Every `Rx` value must be disposed by whoever created it — occam never disposes one for you.
 
-- `initState()`: Widget mounted
-- `readyState()`: Context is safe, use for navigation args
-- `dispose()`: Clean up resources
+---
 
-## Key Features
+See `AGENTS.md` for the full architecture and the conventions to follow when contributing,
+and `CHANGELOG.md` for version history.
 
-- ✅ **Simple**: Based on native Flutter StatefulWidget
-- ✅ **Clean**: Separation of UI and logic
-- ✅ **Reactive**: Automatic UI updates
-- ✅ **Safe**: Explicit disposal prevents memory leaks
-- ✅ **Minimal**: No unnecessary features
-
-## Example Catalog
-
-Occam ships with a Flutter example app that catalogues the framework's building
-blocks. To explore it locally:
-
-```bash
-flutter run example
-```
-
-Every entry in the catalog is a `StateWidget`/`StateController` pair that keeps
-UI concerns separate from logic. The current demos cover:
-
-- **Reactive basics** – `Rx<int>`, `RxBool`, and mutable models calling `refresh()`.
-- **ParentState sharing** – Reusing a controller from stateless helper widgets via `ParentStateMixin`.
-- **RxList operations** – Using `assignAll`, `shuffle`, `removeWhere`, and drag-and-drop reordering.
-- **Stream binding** – Bridging `Stream` emissions into reactive values with `bindStream` / `closeStream`.
-- **Keep-alive controllers** – Mixing `KeepAliveStateMixin` into controllers to preserve scroll offsets across tab switches while still letting the controller opt-in or out at runtime.
-
-Use the catalog as a reference implementation or starting point when bringing
-Occam into your own projects.
-
-## Package Details
-
-### Dependencies
-- **Flutter SDK**: >=3.0.0 <4.0.0
-- **Zero external dependencies** - Only uses Flutter's built-in widgets and Dart's core libraries
-- **Minimal footprint** - No heavy packages or complex abstractions
-
-### Architecture
-- **StateWidget**: Custom StatefulWidget that enforces the View-Controller pattern
-- **StateController**: Enhanced State class with additional lifecycle methods
-- **Rx Types**: Lightweight reactive primitives with explicit disposal
-- **RxWidget**: Simple widget for listening to reactive changes
-- **KeepAliveStateMixin**: Opt-in lifecycle helper that lets controllers participate in `AutomaticKeepAlive` without touching widget code.
-
-### Memory Management
-Occam prioritizes memory safety through:
-- **Explicit disposal** of reactive types in `dispose()`
-- **No hidden listeners** or automatic cleanup that can cause memory leaks
-- **Clear ownership** - each controller owns its reactive variables
-
-### Performance
-- **Minimal overhead** - Built on native Flutter patterns
-- **Efficient updates** - Only rebuilds widgets that actually changed
-- **No reflection** or code generation required
-
-
-## Credits
-
-Inspired by @roipeker's work on state management patterns.
+Thanks to: [@roipeker](https://github.com/roipeker).

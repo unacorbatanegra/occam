@@ -1,11 +1,41 @@
-part of '../../../occam.dart';
+part of '../../occam.dart';
 
-abstract class StateWidget<T extends State> extends StatefulWidget {
+/// A [StatefulWidget] whose logic lives in a [StateController].
+///
+/// The controller is handed to [build] as a parameter. It is never looked up
+/// from ambient state, so an instance can only ever see its own controller —
+/// even when the very same widget object is mounted several times, which is
+/// what happens with a `const` widget reused across a page:
+///
+/// ```dart
+/// class Categories extends StateWidget<CategoriesController> {
+///   const Categories({super.key});
+///
+///   @override
+///   CategoriesController createState() => CategoriesController();
+///
+///   @override
+///   Widget build(BuildContext context, CategoriesController state) {
+///     return RxWidget<List<Category>>(
+///       notifier: state.items,
+///       // `state` here is the parameter, captured by the closure, so it stays
+///       // correct even though the builder runs after build() has returned.
+///       builder: (ctx, items) => Text('${state.title}: ${items.length}'),
+///     );
+///   }
+/// }
+/// ```
+abstract class StateWidget<T extends StateController<StateWidget<dynamic>>>
+    extends StatefulWidget {
+  /// A view paired 1:1 with a [StateController] via [createState].
   const StateWidget({super.key});
 
-  Widget build(BuildContext context);
-
-  T get state => StateElement._elements[this] as T;
+  /// Describes this instance's UI.
+  ///
+  /// [state] is the controller belonging to *this* instance, created once by
+  /// [createState] and passed in by the owning element. Closures created here
+  /// capture it, so reading it from a `builder:` or a callback stays correct.
+  Widget build(BuildContext context, T state);
 
   @override
   StateElement createElement() => StateElement(this);
@@ -14,13 +44,14 @@ abstract class StateWidget<T extends State> extends StatefulWidget {
   T createState();
 }
 
+/// The [Element] backing every [StateWidget]. Passes its own controller
+/// into [StateWidget.build] and schedules [StateController.readyState]
+/// for the frame after mount.
 class StateElement extends StatefulElement {
-  StateElement(StateWidget widget) : super(widget) {
-    _elements[widget] = state;
-  }
-  static final _elements = Expando('state-controllers');
-
   bool _justMounted = true;
+
+  /// Creates the element for [StateWidget] instance [widget].
+  StateElement(StateWidget<dynamic> super.widget);
 
   @override
   void mount(Element? parent, Object? newSlot) {
@@ -30,16 +61,8 @@ class StateElement extends StatefulElement {
 
   @override
   void unmount() {
-    _elements[widget] = null;
     _justMounted = false;
     super.unmount();
-  }
-
-  @override
-  void update(StatefulWidget newWidget) {
-    _elements[widget] = null;
-    _elements[newWidget] = state;
-    super.update(newWidget);
   }
 
   @override
@@ -49,10 +72,7 @@ class StateElement extends StatefulElement {
       WidgetsBinding.instance.addPostFrameCallback(
         (_) {
           if (!mounted) return;
-          final s = state;
-          if (s is StateController) {
-            s.readyState();
-          }
+          (state as StateController<dynamic>).readyState();
         },
       );
     }
@@ -60,8 +80,10 @@ class StateElement extends StatefulElement {
   }
 
   @override
-  StateWidget get widget => super.widget as StateWidget;
+  StateWidget<dynamic> get widget => super.widget as StateWidget<dynamic>;
 
+  /// Builds through [StateWidget.build], handing it this element's own
+  /// controller. This is the only path by which a controller is exposed.
   @override
-  Widget build() => widget.build(this);
+  Widget build() => widget.build(this, state as StateController<dynamic>);
 }
