@@ -1,5 +1,10 @@
 # Occam
 
+[![pub package](https://img.shields.io/pub/v/occam.svg)](https://pub.dev/packages/occam)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Flutter](https://img.shields.io/badge/Flutter-3.0+-blue.svg)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-3.0+-blue.svg)](https://dart.dev)
+
 A simple state manager built on native Flutter `StatefulWidget`, made for my own projects.
 
 ## Contents
