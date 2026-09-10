@@ -2,7 +2,9 @@
 
 part of '../../occam.dart';
 
-class StateController<T extends StatefulWidget> extends State<T> {
+/// A [State] whose `build()` is forbidden — the widget builds instead, via
+/// [StateWidget.build]. Pair one with each [StateWidget] via `createState`.
+class StateController<T extends StateWidget<dynamic>> extends State<T> {
   @mustCallSuper
   @override
   Widget build(BuildContext context) {

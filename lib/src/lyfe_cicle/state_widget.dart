@@ -25,7 +25,9 @@ part of '../../occam.dart';
 ///   }
 /// }
 /// ```
-abstract class StateWidget<T extends StateController> extends StatefulWidget {
+abstract class StateWidget<T extends StateController<StateWidget<dynamic>>>
+    extends StatefulWidget {
+  /// A view paired 1:1 with a [StateController] via [createState].
   const StateWidget({super.key});
 
   /// Describes this instance's UI.
@@ -42,10 +44,14 @@ abstract class StateWidget<T extends StateController> extends StatefulWidget {
   T createState();
 }
 
+/// The [Element] backing every [StateWidget]. Passes its own controller
+/// into [StateWidget.build] and schedules [StateController.readyState]
+/// for the frame after mount.
 class StateElement extends StatefulElement {
   bool _justMounted = true;
 
-  StateElement(StateWidget super.widget);
+  /// Creates the element for [StateWidget] instance [widget].
+  StateElement(StateWidget<dynamic> super.widget);
 
   @override
   void mount(Element? parent, Object? newSlot) {
@@ -66,7 +72,7 @@ class StateElement extends StatefulElement {
       WidgetsBinding.instance.addPostFrameCallback(
         (_) {
           if (!mounted) return;
-          (state as StateController).readyState();
+          (state as StateController<dynamic>).readyState();
         },
       );
     }
@@ -74,10 +80,10 @@ class StateElement extends StatefulElement {
   }
 
   @override
-  StateWidget get widget => super.widget as StateWidget;
+  StateWidget<dynamic> get widget => super.widget as StateWidget<dynamic>;
 
   /// Builds through [StateWidget.build], handing it this element's own
   /// controller. This is the only path by which a controller is exposed.
   @override
-  Widget build() => widget.build(this, state as StateController);
+  Widget build() => widget.build(this, state as StateController<dynamic>);
 }

@@ -1,6 +1,8 @@
 part of '../../../occam.dart';
 
+/// A reactive [bool], with the logical operators a flag typically needs.
 class RxBool extends RxInterface<bool> {
+  /// Creates the notifier with an initial [value].
   RxBool(super.value);
 
   /// The logical conjunction ("and") of this and [other].
@@ -35,9 +37,9 @@ class RxBool extends RxInterface<bool> {
     return false;
   }
 
+  /// Flips the value (`true` becomes `false` and vice versa).
   void toggle() {
     value = !value;
-    refresh();
   }
 
   @override

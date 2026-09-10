@@ -1,25 +1,21 @@
 import 'package:occam/occam.dart';
 
-class SecondController extends StateController {
+import 'second_page.dart';
+
+class SecondController extends StateController<SecondPage> {
   final notifier = ''.rx;
   final list = <String>[].rx;
   final counter = 1.rx;
-  @override
-  void readyState() {}
-
-  void back() {
-    list.add(DateTime.now().toIso8601String());
-    // navigator.pop('test result argument');
-  }
 
   void onButton() => counter.value++;
 
-  void test() {}
+  void addToList() => list.add(DateTime.now().toIso8601String());
 
   @override
   void dispose() {
     counter.dispose();
     notifier.dispose();
+    list.dispose();
     super.dispose();
   }
 }

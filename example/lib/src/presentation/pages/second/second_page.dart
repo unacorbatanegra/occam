@@ -1,53 +1,74 @@
 import 'package:flutter/material.dart';
 import 'package:occam/occam.dart';
 
+import '../../widgets/demo_section.dart';
 import 'second_controller.dart';
 
 class SecondPage extends StateWidget<SecondController> {
-  const SecondPage({Key? key}) : super(key: key);
+  const SecondPage({super.key});
 
   @override
   SecondController createState() => SecondController();
 
   @override
-  Widget build(context, state) {
+  Widget build(BuildContext context, SecondController state) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Second Page'),
-      ),
+      appBar: AppBar(title: const Text('Second Page')),
       floatingActionButton: FloatingActionButton(
         onPressed: state.onButton,
+        tooltip: 'Increment the counter below',
         child: const Icon(Icons.add),
       ),
       body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          RxWidget<String>(
-            notifier: state.notifier,
-            builder: (ctx, value) => Text(value),
-          ),
-          Center(
-            child: ElevatedButton(
-              onPressed: state.back,
-              child: const Text('Back'),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: DemoSection(
+              title: 'Rx<int> — reactive counter',
+              children: [
+                RxWidget<int>(
+                  notifier: state.counter,
+                  builder: (ctx, v) => Text(
+                    'reactive $v',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                ),
+              ],
             ),
-          ),
-          RxWidget<int>(
-            notifier: state.counter,
-            builder: (ctx, v) => Text('reactive $v'),
           ),
           Expanded(
-            child: RxWidget<List<String>>(
-              notifier: state.list,
-              builder: (ctx, value) => ListView.separated(
-                itemBuilder: (ctx, idx) => ListTile(
-                  title: Text(value[idx]),
-                ),
-                separatorBuilder: (ctx, idx) => SizedBox.shrink(),
-                itemCount: state.list.length,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: DemoSection(
+                title: 'RxList<String> — reactive list',
+                children: [
+                  RxWidget<String>(
+                    notifier: state.notifier,
+                    builder: (ctx, value) => Text(value),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton(
+                    onPressed: state.addToList,
+                    child: const Text('Add to list'),
+                  ),
+                  const Divider(height: 24),
+                  Expanded(
+                    child: RxWidget<List<String>>(
+                      notifier: state.list,
+                      builder: (ctx, value) => value.isEmpty
+                          ? const Center(child: Text('No items yet'))
+                          : ListView.separated(
+                              itemBuilder: (ctx, idx) =>
+                                  ListTile(title: Text(value[idx])),
+                              separatorBuilder: (ctx, idx) => const Divider(),
+                              itemCount: value.length,
+                            ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          )
+          ),
         ],
       ),
     );

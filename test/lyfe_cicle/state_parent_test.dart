@@ -1,18 +1,11 @@
 // ignore_for_file: public_member_api_docs, avoid_print
 //
-// ParentState had the same class of defect as StateWidget, plus two more.
-// Before the fix, `ParentStateMixin.state` read from an Expando keyed by the
-// widget object:
-//
-//   1. one slot per widget object — two `const ChildConsumer()` mounted at once
-//      overwrote each other, so both resolved to the same provider;
-//   2. `unmount()` set that shared slot to null, so unmounting one instance
-//      broke its still-mounted siblings with a null cast;
-//   3. resolution used findRootAncestorStateOfType, i.e. the FARTHEST matching
-//      ancestor, so nested providers of the same type resolved to the outer one.
-//
-// The controller now arrives as a build parameter, resolved by walking up from
-// this element to the nearest matching ancestor. These tests cover all three.
+// ParentState: a child reads an ancestor StateWidget's controller by walking
+// up the element tree to the nearest match, resolved once per build and
+// cached until deactivate. Covers: one shared widget object providing to
+// several consumers, survivors after a sibling unmounts, nearest-wins
+// resolution for nested providers of the same type, the error when no
+// ancestor exists, and the provider controller's normal lifecycle.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -115,6 +108,31 @@ void main() {
       expect(c.disposeCount, 1, reason: '${c.label} dispose');
     }
   });
+
+  testWidgets('update() runs when the same element gets a new widget instance',
+      (tester) async {
+    // A fresh (non-const) Consumer() each build, same type/slot, so Flutter
+    // calls ParentStateElement.update() on the existing element instead of
+    // replacing it.
+    Widget build() =>
+        MaterialApp(home: Scaffold(body: Host(child: Consumer())));
+
+    await tester.pumpWidget(build());
+    final host = hostControllersOf(tester).single;
+    expect(find.text(host.label), findsOneWidget);
+
+    await tester.pumpWidget(build());
+
+    expect(find.text(host.label), findsOneWidget,
+        reason: 'update() must still resolve the same provider');
+  });
+
+  test('a raw controller type asserts instead of resolving nothing', () {
+    expect(
+      const _BadConsumer().createElement,
+      throwsA(isA<AssertionError>()),
+    );
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -209,4 +227,14 @@ class Consumer extends ParentState<HostController> {
   @override
   Widget build(BuildContext context, HostController state) =>
       Text(state.label, textDirection: TextDirection.ltr);
+}
+
+/// A [ParentState] declared without a concrete controller type — what the
+/// `createElement` assert exists to catch.
+class _BadConsumer extends ParentState<StateController<dynamic>> {
+  const _BadConsumer();
+
+  @override
+  Widget build(BuildContext context, StateController<dynamic> state) =>
+      const SizedBox();
 }

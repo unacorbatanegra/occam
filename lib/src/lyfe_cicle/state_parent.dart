@@ -21,7 +21,8 @@ part of '../../occam.dart';
 /// resolves to the inner one. Because resolution goes through the element and
 /// not through the widget object, mounting the same `const ParentState()` object
 /// several times gives each instance its own provider.
-abstract class ParentState<T extends StateController> extends Widget {
+abstract class ParentState<T extends StateController<dynamic>> extends Widget {
+  /// Reads the nearest ancestor `StateWidget<T>`'s controller.
   const ParentState({super.key});
 
   /// Describes this widget's UI.
@@ -32,7 +33,7 @@ abstract class ParentState<T extends StateController> extends Widget {
   @override
   ParentStateElement<T> createElement() {
     assert(
-      T != StateController,
+      T != StateController<dynamic>,
       'Provide a concrete controller type: '
       '$runtimeType extends ParentState<MyController>',
     );
@@ -40,7 +41,11 @@ abstract class ParentState<T extends StateController> extends Widget {
   }
 }
 
-class ParentStateElement<T extends StateController> extends ComponentElement {
+/// The [Element] backing every [ParentState]. Resolves the ancestor
+/// controller lazily on first build and caches it until [deactivate].
+class ParentStateElement<T extends StateController<dynamic>>
+    extends ComponentElement {
+  /// Creates the element for [ParentState] subclass instance [widget].
   ParentStateElement(ParentState<T> super.widget);
 
   @override

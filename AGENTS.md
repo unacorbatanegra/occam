@@ -3,7 +3,7 @@
 Minimalist Flutter state management built **on top of** Flutter's own `StatefulWidget`/`State`
 instead of replacing it. No `InheritedWidget`, no service locator, no code generation.
 
-Package: `occam` (v1.0.1) · Dart SDK `>=3.0.0 <4.0.0` · deps: `flutter`, `meta` only.
+Package: `occam` (v2.0.0) · Dart SDK `>=3.0.0 <4.0.0` · deps: `flutter`, `meta` only.
 
 ---
 
@@ -14,11 +14,12 @@ One screen = **one view + one controller**, always paired:
 | Role | Flutter class it really is | Your subclass |
 |---|---|---|
 | View — widgets only, no logic | `StatefulWidget` | `class HomePage extends StateWidget<HomeController>` |
-| Controller — logic only, no widgets | `State` | `class HomeController extends StateController` |
+| Controller — logic only, no widgets | `State` | `class HomeController extends StateController<HomePage>` |
 
-The trick: normally `build()` lives in the `State`. Occam moves it to the **widget**, so the
-view file has the widget tree and the controller file has none. The controller is reachable
-from the view via `state`.
+The trick: normally `build()` lives on the `State`. Occam moves it to the **widget**, and the
+element hands the controller *in* as a parameter — so the view file has the widget tree and
+the controller file has none, and a `build()` closure always closes over the right instance
+even if the same `const` widget object is mounted several times.
 
 ```dart
 class HomePage extends StateWidget<HomeController> {
@@ -28,9 +29,9 @@ class HomePage extends StateWidget<HomeController> {
   HomeController createState() => HomeController();   // the pairing
 
   @override
-  Widget build(BuildContext context) => Scaffold(     // build() is HERE, on the widget
+  Widget build(BuildContext context, HomeController state) => Scaffold(
         floatingActionButton: FloatingActionButton(
-          onPressed: state.onButton,                  // `state` == the controller
+          onPressed: state.onButton,
           child: const Icon(Icons.add),
         ),
         body: RxWidget<int>(
@@ -40,7 +41,7 @@ class HomePage extends StateWidget<HomeController> {
       );
 }
 
-class HomeController extends StateController {
+class HomeController extends StateController<HomePage> {
   final counter = 1.rx;                 // reactive int
 
   void onButton() => counter.value++;
@@ -59,59 +60,73 @@ class HomeController extends StateController {
 ```
 
 Reactivity is deliberately **explicit**: a value only rebuilds UI when you wrap that part of
-the tree in `RxWidget`. There is no automatic `Obx`-style dependency tracking — the README
-states this was intentional, because implicit tracking made correct disposal of listeners
-impossible.
+the tree in `RxWidget`. There is no automatic `Obx`-style dependency tracking — implicit
+tracking makes correct listener disposal much harder to get right.
 
 ---
 
 ## 2. File map
 
-Everything is one Dart library assembled with `part of` from `lib/occam.dart` — so all
-private members (`_`) are visible across files. Adding a new file means adding a `part`
-directive to `lib/occam.dart`.
+Everything is one Dart library assembled with `part of` from `lib/occam.dart`, except
+`rx_notifier.dart` and `occam_debug.dart`, which are standalone libraries `import`ed and
+`export`ed from `occam.dart` (so both the `part` files and external consumers can see
+`Rx`/`RxInterface`/`RxMixin`/`OccamDebug`). Adding a new `part` file means adding a `part`
+entry to `lib/occam.dart`; adding a new standalone file means adding both an `import` and an
+`export`.
 
 ```
-lib/occam.dart                       library root, `part` list, OccamDebug.debug flag
+lib/occam.dart                       library root, import/export/part list
+lib/src/occam_debug.dart             OccamDebug.debug flag (standalone library)
 lib/src/lyfe_cicle/                  ("lifecycle" — note the typo, it is the real path)
   state_widget.dart                  StateWidget + StateElement  ← the heart of the package
   state_controller.dart              StateController (a State with build() forbidden)
-  state_parent.dart                  ParentState / ParentStateMixin / ParentStateElement
+  state_parent.dart                  ParentState + ParentStateElement
 lib/src/rx/
-  rx_notifier.dart                   RxMixin, RxInterface, Rx<T>
+  rx_notifier.dart                   RxMixin, RxInterface, Rx<T> (standalone library)
   primitives/rx_bool.dart            RxBool
   iterables/rx_list.dart             RxList<T>
   extensions/extensions.dart         `.rx` getters on T, bool, List<T>
-lib/src/widgets/rx_widget.dart       RxWidget<T> — the only rebuild primitive
-lib/src/utils/extension.dart         navigator / navArgs on StateController
+  widgets/rx_widget.dart             RxWidget<T> — the only rebuild primitive
 example/                             runnable app exercising every feature
-test/                                widget + unit tests, mirrors lib/ layout
+test/                                mirrors lib/ 1:1, plus flutter_test_config.dart
 ```
 
 ---
 
-## 3. How `state` actually resolves (the subtle part)
+## 3. How the controller reaches `build()`
 
-`StateWidget.state` must return the paired `State` object, but a `StatefulWidget` has no
-pointer to its `State`. `StateElement` (a custom `StatefulElement`) bridges the gap with a
-**two-tier lookup** — read `lib/src/lyfe_cicle/state_widget.dart:28` onward:
+`StateElement` (a custom `StatefulElement`) creates the controller the normal Flutter way —
+`createState()`, once per element — and simply passes it as a second argument when it calls
+`StateWidget.build`:
 
-1. **Build stack** — `_buildStackByWidget`: a `Map<StateWidget, List<StateElement>>`.
-   `StateElement.build()` pushes itself before calling `widget.build(this)` and pops in a
-   `finally`. The list (not a single value) is what lets the *same* widget instance be
-   nested/rebuilt reentrantly. This is the fast, correct path while a view is building.
-2. **Mounted registry** — `_mountedStateElements`: a `Set<StateElement>` maintained in
-   `mount`/`unmount`. Fallback for when `state` is touched outside the widget's own
-   `build()` (e.g. a child rebuilding independently). Matched with `identical(element.widget, widget)`.
+```dart
+@override
+Widget build() => widget.build(this, state as StateController<dynamic>);
+```
 
-If both miss, `state` throws a `FlutterError` telling you to access it from within `build()`.
+There is no ambient lookup (no static map, no `Expando`, no ancestor search) for a widget to
+find its **own** controller — the parameter *is* the lookup, resolved by the element that
+owns it. This is why a `const` widget object mounted several times (a banner, a category row
+reused down a list) can never leak one instance's data into another's: each element calls
+`build()` with its own `state`, and closures created inside `build` (a `builder:`, a tap
+callback) capture that parameter, so reads that happen long after `build()` has returned
+still refer to the right instance. Before `2.0.0`, `StateWidget.state` was a getter backed by
+exactly the kind of registry this design avoids, and it leaked under that scenario — see
+`CHANGELOG.md`.
 
-**Why keyed by element, not widget:** the registry deliberately keys on the *element* so that
-unmounting one instance never invalidates another instance of the same widget class. This
-was the fix for the memory-leak / wrong-state class of bug (branch `1.0.1-memory-fix`,
-commit `1ec9a53 fix: memory leaks`). Preserve that invariant when touching this file.
-
-`StateElement._elements` is a separate `Expando` used by the `ParentState` machinery.
+**The one cast this forces:** Flutter's own `StatefulElement.state` getter is typed as plain
+`State<StatefulWidget>` (non-generic, by design — Elements aren't parameterized per widget,
+which is what keeps the element tree homogeneous). So `StateElement`/`ParentStateElement`
+each cast once, at that exact boundary, to `StateController<dynamic>`/`T` respectively. It's
+unavoidable while building on `StatefulElement`, and it's made as precise as Dart's type
+system allows: `StateController<T extends StateWidget<dynamic>>` and
+`StateWidget<T extends StateController<dynamic>>` bound each other, so a `StateController`
+can only ever be declared for a `StateWidget` and vice versa — misuse is a compile error, not
+a runtime throw the first time a mismatched widget builds. (The `<dynamic>` in those bounds
+is not a hole in the pairing: it only says "some `StateWidget`/`StateController`, don't care
+which" at the point where Dart, lacking wildcards, needs *a* type argument to satisfy
+`strict-raw-types`. Every concrete subclass — `HomeController extends StateController<HomePage>`
+— is still checked against the real, specific class.)
 
 ### Lifecycle hooks
 
@@ -122,41 +137,40 @@ commit `1ec9a53 fix: memory leaks`). Preserve that invariant when touching this 
 | `dispose()` | teardown | disposing every `Rx` you created |
 
 `readyState()` is scheduled from `StateElement.performRebuild()` via
-`addPostFrameCallback`, guarded by `_justMounted` and a `mounted` re-check. It replaces both
-`didChangeDependencies()` and context-dependent `initState()` work.
+`addPostFrameCallback`, guarded by `_justMounted` and a `mounted` re-check, so it fires
+exactly once per instance, after the first build.
 
-`StateController.build()` **throws by design** — build belongs to the widget. The one legal
-reason to override it is mixing in something that requires it, e.g.
-`AutomaticKeepAliveClientMixin`, in which case you call `super.build(context)` then return
-`widget.build(context)` (see `example/lib/.../bottom/page_1.dart`).
+`StateController.build()` **throws `UnsupportedError` by design** — build belongs to the
+widget. There is no legitimate reason to override it; if you need to hook the build phase for
+something like `AutomaticKeepAliveClientMixin`, do it in the widget's `build()` instead.
 
 ---
 
 ## 4. Sharing a controller with a child: `ParentState`
 
-For a stateless child widget that needs a parent controller:
+For a widget that needs a *parent's* controller instead of its own:
 
 ```dart
 class ChildConsumer extends ParentState<HomeController> {
   const ChildConsumer({super.key});
 
   @override
-  Widget build(BuildContext context) =>
+  Widget build(BuildContext context, HomeController state) =>
       TextButton(onPressed: state.onTap, child: const Text('child'));
 }
 ```
 
-`ParentStateElement.build()` resolves the ancestor once on first build via
-`findRootAncestorStateOfType<T>()` and caches it in `_otherState`. A generic assert catches
-`ParentState<StateController>` used without a concrete subtype.
+`ParentState` extends `Widget` directly (not `StatelessWidget`) and hands its
+`ParentStateElement` a custom `build()` with the extra `state` parameter — `StatelessWidget`
+already declares a fixed one-argument `build(BuildContext)`, so a second parameter can't be
+added by overriding it. This mirrors how `StatefulWidget`/`StatelessWidget`/
+`RenderObjectWidget` are each their own direct subclass of `Widget` with their own `Element`;
+`ParentState` is a fourth flavor of that same pattern, not a reinvention of `StatelessWidget`.
 
-Note the two overlapping lookups here: `build()` uses `findRootAncestorStateOfType` (**root**
-ancestor), while `findStateControllerProvider()` walks with `visitAncestorElements` for the
-**nearest** match and throws a descriptive error. They are not interchangeable — for nested
-same-type controllers `build()` currently binds to the outermost one.
-
-A controller can also reach upward directly: `context.findRootAncestorStateOfType<HomeController>()`
-— `StateController.context` is narrowed to `StatefulElement`, so element APIs are available.
+`ParentStateElement._findProvider()` walks ancestors with `visitAncestorElements` for the
+**nearest** matching `StateElement`, resolves lazily on first build, and caches the result
+until `deactivate()` — so a widget reinserted elsewhere resolves again. A missing ancestor
+throws a `FlutterError` naming the expected `StateWidget<T>`.
 
 ---
 
@@ -180,7 +194,7 @@ final model   = Rx<Model>(Model(name: 'Nico'));    // explicit
 | `call([newValue])` | `counter(5)` sets, `counter()` reads; ignores `null` — usable directly as `onTap: rx` |
 | `refresh()` | force `notifyListeners()`; needed after mutating a field *inside* an object |
 | `update((v) => …)` | functional set |
-| `addValueListener` / `removeValueListener` | `ValueChanged<T>` listeners, deduped in `_valueListeners` |
+| `addValueListener` / `removeValueListener` | `ValueChanged<T>` listeners, deduped |
 | `bindStream(stream)` / `closeStream(stream)` | pipe a stream into the value; auto-unsubscribes `onDone` |
 | `disposed` | true after `dispose()`, to avoid use-after-dispose |
 | `lengthOfListeners` | `@visibleForTesting` count |
@@ -188,21 +202,16 @@ final model   = Rx<Model>(Model(name: 'Nico'));    // explicit
 `dispose()` removes every tracked listener and cancels every subscription before
 `super.dispose()`.
 
-The mixin keeps its own `_listeners` list *in addition* to `ValueNotifier`'s internal list.
-`addListener`/`removeListener` must stay symmetric with that list — the `1.0.1` changelog
-entry "remove double calling in mixin on listeners" was a bug in exactly this bookkeeping.
-
 - `RxBool` — `toggle()`, logical `& | ^`, and `==` that compares against raw `bool` *or*
   another `RxBool` (with matching `hashCode`).
-- `RxList<T>` — `RxInterface<List<T>>` + `ListMixin<T>`, so it behaves like a `List` while
-  notifying on `add`, `[]=`, `remove`, `clear`, `removeWhere`, `addAll`, `length=`, and
-  `assignAll`. Caveat: it wraps the list you pass in, mutates it in place, and defaults to
-  `const []` — pass a growable list.
+- `RxList<T>` — `RxInterface<List<T>>` + `ListMixin<T>`, notifying on `add`, `[]=`, `remove`,
+  `clear`, `removeWhere`, `addAll`, `length=`, and `assignAll`. It wraps the list you pass in
+  and mutates it in place; with no argument it starts with a fresh, growable empty list.
 
 ### Rebuilding: `RxWidget<T>`
 
 The only widget that listens. It caches `value`, subscribes in `initState`, resubscribes in
-`didUpdateWidget` when the notifier or its value changed, `setState`s in `_update`, and
+`didUpdateWidget` when the notifier itself changes, `setState`s in `_update`, and
 unsubscribes in `dispose`. Keep it as tight around the changing text/subtree as possible —
 that is the whole performance story of this package.
 
@@ -212,22 +221,33 @@ that is the whole performance story of this package.
 
 - **Disposal is manual.** Occam never auto-disposes an `Rx`. Every `Rx` created in a
   controller must be disposed in that controller's `dispose()`. Adding an `Rx` field to an
-  example or test without disposing it is a bug, not a style issue.
-- **`part of`, not `import`.** New source files go under `lib/src/...` and get a `part`
-  entry in `lib/occam.dart`. Prefer `part of '../../occam.dart';` (relative, as in
-  `rx_widget.dart`) — the bare `part of occam;` form in the older files is deprecated style.
-- **Don't leak `print`.** Debug output is gated on `OccamDebug.debug` (default `false`);
-  `state_controller.dart` carries `// ignore_for_file: avoid_print` for that reason.
-  Commit `a7c940b remove prints` exists because stray prints shipped once.
+  example or test without disposing it is a bug, not a style issue — and `test/flutter_test_config.dart`
+  now enables `LeakTesting` for every widget test, so a widget test that leaks one will fail.
+- **`part of`, not `import`, for anything inside `lib/occam.dart`'s own library.** New files
+  under `lib/src/lyfe_cicle/` and `lib/src/rx/{primitives,iterables,extensions,widgets}` get a
+  `part` entry in `lib/occam.dart`, using `part of '../../occam.dart';` (relative). The two
+  exceptions are `rx_notifier.dart` and `occam_debug.dart`, which are standalone libraries —
+  see §2.
+- **Don't leak `print`.** `avoid_print` is an error-level lint; the one legitimate print path
+  (`state_controller.dart`, gated on `OccamDebug.debug`) carries its own
+  `// ignore_for_file: avoid_print` for that reason. Commit `a7c940b remove prints` exists
+  because stray prints shipped once — don't reintroduce that class of bug.
+- **`public_member_api_docs` is enforced** (as an error, via `--fatal-infos` in CI). Every
+  public class/member needs a doc comment, except ones annotated `@override` — they inherit
+  the documented contract from their superclass.
 - **Touching `state_widget.dart` or `state_parent.dart` is high-risk.** Both encode
   element-lifetime invariants that guard against memory leaks and cross-instance state
-  bleed. Add a widget test for any change there.
-- Tests mirror `lib/` layout under `test/`. Note `test/rx/primitive/rx_bool.dart` lacks the
-  `_test` suffix, so `flutter test` does not pick it up — fix the name if you touch it.
-- CI (`.github/workflows/test.yml`, master only, Flutter 3.10.5) runs, in order:
-  `dart format --set-exit-if-changed ./lib ./test`, `flutter analyze ./lib ./test`,
-  `flutter test`. **Run `dart format` before committing** — formatting failures break the
-  build first. Lints: `package:flutter_lints`.
+  bleed. Add a widget test for any change there — `test/lyfe_cicle/state_widget_test.dart`
+  is the instance-isolation regression suite; run it both ways to cover both debug and
+  release `const`-canonicalization behavior:
+  `flutter test test/lyfe_cicle/state_widget_test.dart --no-track-widget-creation`.
+- Tests mirror `lib/` layout 1:1 under `test/`, flattened (no nested subfolders per `Rx` type).
+- CI (`.github/workflows/test.yml`, master + PRs) runs, in order: `dart format
+  --set-exit-if-changed ./lib ./test`, `flutter analyze --fatal-infos ./lib ./test`,
+  `flutter test --coverage` gated at 100% via `test_cov_console`, `dart pub publish
+  --dry-run`. A separate `.github/workflows/security.yml` runs OSV-Scanner daily and on every
+  push/PR. **Run `dart format` before committing** — formatting failures break the build
+  first.
 - Public API is `lib/occam.dart` only; consumers write `import 'package:occam/occam.dart';`.
   Any rename of a public symbol is a breaking change — bump the version and update
   `CHANGELOG.md` and `README.md` together.
@@ -237,23 +257,29 @@ that is the whole performance story of this package.
 ```bash
 flutter pub get
 flutter test
-flutter test --coverage
+flutter test --coverage && dart run test_cov_console
 dart format ./lib ./test
-flutter analyze ./lib ./test
+flutter analyze --fatal-infos ./lib ./test
+dart pub publish --dry-run
 
 cd example && flutter run          # routes: / , /secondPage , /bottom
+
+# Benchmarks (informational, not CI-gated — see benchmark/*.dart headers).
+# `flutter test`, not `dart run`: occam.dart imports package:flutter.
+flutter test benchmark/rx_notifier_benchmark.dart
+flutter test benchmark/rx_list_benchmark.dart
+flutter test benchmark/widget_benchmark.dart
 ```
 
 ## 8. Known rough edges (fair game to fix, don't be surprised by them)
 
 - `lib/src/lyfe_cicle/` is a misspelling of "lifecycle"; renaming it changes the `part`
-  paths in `lib/occam.dart`.
-- `_RxWidgetState` is a private type returned from a public `createState()` — analyzer
-  grumbles, harmless.
-- `ParentStateElement.findStateControllerProvider()` is defined but currently unused;
-  `build()` uses `findRootAncestorStateOfType` instead (see §4 — different semantics).
-- `RxList` defaults to `const []`, which throws on mutation if constructed with no argument
-  and then written to.
+  paths in `lib/occam.dart` and every relative `part of` in that directory.
 - The `Native<T>.assignAll` extension on plain `List<T>` shadows nothing but can collide
-  with other packages' extensions.
-- The README's usage snippet has an extra trailing `}` and predates `super.key`.
+  with other packages' extensions of the same name.
+- Dart canonicalizes `const` Widget expressions only when `--track-widget-creation` is off
+  (release/profile) or the same const *site* is evaluated more than once; two separate
+  `const Probe()` expressions in debug are different objects. This is why
+  `state_widget_test.dart` mounts a shared `const` reference (`kProbe`) rather than inline
+  `const Probe()` — see that file's `'diagnostic: which const forms end up as the same
+  object'` test if this ever needs re-verifying against a new Flutter version.

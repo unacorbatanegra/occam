@@ -9,14 +9,18 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Occam Demo',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        useMaterial3: true,
+        colorSchemeSeed: Colors.indigo,
+        cardTheme: const CardThemeData(
+          margin: EdgeInsets.symmetric(vertical: 8),
+        ),
       ),
       initialRoute: '/',
       routes: {

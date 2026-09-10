@@ -16,11 +16,17 @@ analyzer:
 
 linter:
   rules:
+    # avoid_print and use_super_parameters are already on via
+    # flutter_lints/flutter.yaml and lints/recommended.yaml respectively —
+    # not repeated here to avoid implying they weren't already covered.
     - always_declare_return_types
     - avoid_dynamic_calls
     - cancel_subscriptions
     - close_sinks
     - only_throw_errors
     - prefer_final_locals
+    - public_member_api_docs
+    # RxBool overrides == (with proper `is bool` / `is RxBool` checks) —
+    # guards any future Rx* equality override against skipping that check.
+    - test_types_in_equals
     - unawaited_futures
-    - use_super_parameters

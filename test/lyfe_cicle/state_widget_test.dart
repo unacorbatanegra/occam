@@ -1,50 +1,19 @@
 // ignore_for_file: public_member_api_docs, avoid_print
 //
-// Instance-isolation suite for StateWidget.
+// StateWidget/StateElement: instance isolation and controller lifecycle.
 //
-// ---------------------------------------------------------------------------
-// WHAT THIS FILE USED TO TEST, AND WHY IT CHANGED
-// ---------------------------------------------------------------------------
-// `StateWidget.state` used to be a getter that resolved the controller from
-// ambient static state: a per-widget build stack, plus a registry keyed by
-// `identical(element.widget, widget)` as a fallback for reads evaluated after
-// build() had returned. Measured behaviour with one widget object mounted 4
-// times (a `const` widget reused on a page, e.g. a banner or a category row):
+// `build(BuildContext context, T state)` hands each element its own
+// controller directly, so a `const` widget object mounted several times (a
+// banner, a category row) can never read another instance's data — there is
+// no ambient lookup (static map/registry) left to get wrong. This suite
+// covers: (1) isolation at scale when one widget object is mounted N times,
+// (2) reads deferred to a `builder:`/callback that runs after build() has
+// returned, and (3) the controller lifecycle (one initState/readyState/
+// dispose per instance, stable identity across rebuilds).
 //
-//   mounted controllers: [lex-0, lex-1, lex-2, lex-3]
-//     lex-0 rendered 4 time(s)
-//     lex-1 rendered 0 time(s)   <- alive, and unreachable from its own UI
-//     lex-2 rendered 0 time(s)
-//     lex-3 rendered 0 time(s)
-//
-// The question "which of the 4 instances is asking?" had no answer: a getter's
-// only input is the widget object, and that object was shared. It was answered
-// with a silent guess — always the first-mounted instance.
-//
-// The fix removed the question. `build` now receives the controller:
-//
-//     Widget build(BuildContext context, T state)
-//
-// Closures created during build capture that parameter, so a read inside a
-// `builder:` or a tap callback — which runs long after build() returned — still
-// refers to the right instance. There is no ambient lookup left to get wrong.
-//
-// So the old detectors are gone: they asserted things about `widget.state`,
-// which no longer exists. Cross-instance leakage is now a compile-time
-// impossibility rather than a runtime invariant. What remains worth testing:
-//
-//   1. instance isolation at scale — the plumbing in StateElement.build()
-//      passes each element its OWN controller. If that regressed, or if an
-//      ambient lookup were reintroduced, these go red.
-//   2. deferred reads — the exact shapes that used to leak still work.
-//   3. the controller lifecycle — one initState / readyState / dispose per
-//      instance, stable identity across rebuilds, never handed out after
-//      dispose.
-//
-// Run both ways; `--no-track-widget-creation` reproduces release const
-// behaviour, where separate `const Probe()` expressions collide into one object:
-//   flutter test test/lyfe_cicle/state_identity_test.dart
-//   flutter test test/lyfe_cicle/state_identity_test.dart --no-track-widget-creation
+// Run `--no-track-widget-creation` to reproduce release-mode const behavior,
+// where separate `const Probe()` expressions collide into one object:
+//   flutter test test/lyfe_cicle/state_widget_test.dart --no-track-widget-creation
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

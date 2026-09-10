@@ -1,2 +1,10 @@
 .fvm/
 build/
+
+# Native example scaffolding: consumers only need example/lib to see how to
+# use the package; the Android/iOS project files just bloat the archive.
+example/android/
+example/ios/
+example/.fvm/
+example/.dart_tool/
+coverage/

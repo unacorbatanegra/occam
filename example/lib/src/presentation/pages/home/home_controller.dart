@@ -3,34 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:occam/occam.dart';
 
 class HomeController extends StateController<HomePage> {
-  String customVar = 'unacorbatanegra';
   final counter = 1.rx;
-
   final model = Rx<Model>(Model(age: '20', name: 'Nico'));
-  @override
-  void initState() {
-    super.initState();
-  }
 
-  @override
-  void readyState() async {
-    // WidgetsBinding.instance!.addObserver(this);
-  }
-
-  void toSecondPage() async {
-    final result = await Navigator.of(context).pushNamed(
+  Future<void> toSecondPage() {
+    return Navigator.of(context).pushNamed(
       '/secondPage',
       arguments: 'test arguments',
     );
-    print(result);
   }
 
-  // @override
-  // void didChangeAppLifecycleState(AppLifecycleState state) {
-
-  //   print(state);
-  //   super.didChangeAppLifecycleState(state);
-  // }
+  void toBottom() {
+    Navigator.of(context).pushNamed('/bottom');
+  }
 
   void onButton() => counter.value++;
 
@@ -39,18 +24,14 @@ class HomeController extends StateController<HomePage> {
     model.refresh();
   }
 
+  /// Called by [TestStateless], a [ParentState] reading this controller.
+  void onTestStateless() => counter.value++;
+
   @override
   void dispose() {
     counter.dispose();
+    model.dispose();
     super.dispose();
-  }
-
-  void onTestStateless() {
-    print(this);
-  }
-
-  void toBottom() {
-    Navigator.of(context).pushNamed('/bottom');
   }
 }
 

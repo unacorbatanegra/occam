@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:occam/occam.dart';
 
 class Page1 extends StateWidget<Page1Controller> {
-  const Page1({Key? key}) : super(key: key);
+  const Page1({super.key});
 
   @override
   Page1Controller createState() => Page1Controller();
@@ -10,27 +10,16 @@ class Page1 extends StateWidget<Page1Controller> {
   @override
   Widget build(BuildContext context, Page1Controller state) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Page 1'),
-      ),
+      appBar: AppBar(title: const Text('Page 1')),
+      body: const Center(child: Icon(Icons.home, size: 64)),
     );
   }
 }
 
-class Page1Controller extends StateController<Page1>
-    with AutomaticKeepAliveClientMixin<Page1> {
-  @override
-  Widget build(BuildContext context) {
-    super.build(context);
-    return widget.build(context, this);
-  }
-
-  @override
-  bool get wantKeepAlive => true;
-}
+class Page1Controller extends StateController<Page1> {}
 
 class Page2 extends StateWidget<Page2Controller> {
-  const Page2({Key? key}) : super(key: key);
+  const Page2({super.key});
 
   @override
   Page2Controller createState() => Page2Controller();
@@ -38,21 +27,10 @@ class Page2 extends StateWidget<Page2Controller> {
   @override
   Widget build(BuildContext context, Page2Controller state) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Page 2'),
-      ),
+      appBar: AppBar(title: const Text('Page 2')),
+      body: const Center(child: Icon(Icons.settings, size: 64)),
     );
   }
 }
 
-class Page2Controller extends StateController<Page2>
-    with AutomaticKeepAliveClientMixin<Page2> {
-  @override
-  Widget build(BuildContext context) {
-    super.build(context);
-    return widget.build(context, this);
-  }
-
-  @override
-  bool get wantKeepAlive => true;
-}
+class Page2Controller extends StateController<Page2> {}

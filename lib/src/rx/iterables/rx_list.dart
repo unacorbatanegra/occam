@@ -1,7 +1,15 @@
 part of '../../../occam.dart';
 
+/// A reactive [List]. Behaves like a normal `List<T>` and notifies on any
+/// mutation (`add`, `[]=`, `remove`, `clear`, `removeWhere`, `addAll`,
+/// `length=`, `assignAll`).
+///
+/// Wraps the list passed to it — it does not copy — and mutates that same
+/// instance in place. With no argument, starts with a fresh, growable empty
+/// list.
 class RxList<T> extends RxInterface<List<T>> with ListMixin<T> {
-  RxList([super.value = const []]);
+  /// Wraps [value], defaulting to a fresh, empty growable list.
+  RxList([List<T>? value]) : super(value ?? <T>[]);
 
   @override
   T operator [](int index) => value[index];
@@ -43,13 +51,11 @@ class RxList<T> extends RxInterface<List<T>> with ListMixin<T> {
     refresh();
   }
 
+  /// Replaces every element with the contents of [iterable], in place.
   void assignAll(Iterable<T> iterable) {
     value.clear();
     addAll(iterable);
   }
-
-  // @override
-  // bool get hasListeners => _listeners.isNotEmpty;
 
   @override
   int get length => value.length;
@@ -61,7 +67,9 @@ class RxList<T> extends RxInterface<List<T>> with ListMixin<T> {
   }
 }
 
+/// Adds [RxList.assignAll]'s in-place-replace convenience to plain lists too.
 extension Native<T> on List<T> {
+  /// Replaces every element with the contents of [iterable], in place.
   void assignAll(Iterable<T> iterable) {
     clear();
     addAll(iterable);

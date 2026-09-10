@@ -4,7 +4,7 @@ import 'package:occam/occam.dart';
 import 'bottom_controller.dart';
 
 class BottomPage extends StateWidget<BottomController> {
-  const BottomPage({Key? key}) : super(key: key);
+  const BottomPage({super.key});
 
   @override
   BottomController createState() => BottomController();
@@ -23,10 +23,13 @@ class BottomPage extends StateWidget<BottomController> {
         notifier: state.currentIndex,
         builder: (ctx, value) => BottomNavigationBar(
           currentIndex: value,
-          onTap: state.currentIndex,
-          items: [
+          onTap: state.currentIndex.call,
+          items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Home')
+            BottomNavigationBarItem(
+              icon: Icon(Icons.settings),
+              label: 'Settings',
+            ),
           ],
         ),
       ),
