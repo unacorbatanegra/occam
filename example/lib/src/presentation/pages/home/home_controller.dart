@@ -1,7 +1,8 @@
+import 'package:example/src/presentation/pages/home/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:occam/occam.dart';
 
-class HomeController extends StateController {
+class HomeController extends StateController<HomePage> {
   String customVar = 'unacorbatanegra';
   final counter = 1.rx;
 

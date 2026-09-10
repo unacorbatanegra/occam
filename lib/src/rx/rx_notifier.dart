@@ -1,4 +1,6 @@
-part of '../../occam.dart';
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 
 abstract class RxInterface<T> extends ValueNotifier<T> with RxMixin<T> {
   RxInterface(super.value);

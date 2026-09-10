@@ -25,7 +25,7 @@ part of '../../occam.dart';
 ///   }
 /// }
 /// ```
-abstract class StateWidget<T extends State> extends StatefulWidget {
+abstract class StateWidget<T extends StateController> extends StatefulWidget {
   const StateWidget({super.key});
 
   /// Describes this instance's UI.
@@ -79,5 +79,5 @@ class StateElement extends StatefulElement {
   /// Builds through [StateWidget.build], handing it this element's own
   /// controller. This is the only path by which a controller is exposed.
   @override
-  Widget build() => widget.build(this, state);
+  Widget build() => widget.build(this, state as StateController);
 }

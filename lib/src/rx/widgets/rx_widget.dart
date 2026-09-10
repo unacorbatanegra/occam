@@ -1,4 +1,4 @@
-part of '../../occam.dart';
+part of '../../../occam.dart';
 
 class RxWidget<T> extends StatefulWidget {
   final RxInterface<T> notifier;

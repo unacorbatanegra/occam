@@ -2,20 +2,20 @@
 
 part of '../../occam.dart';
 
-class StateController<T extends StateWidget> extends State<T> {
-// class StateController extends State {
+class StateController<T extends StatefulWidget> extends State<T> {
   @mustCallSuper
-  // @t
   @override
   Widget build(BuildContext context) {
-    throw "$runtimeType.build() is invalid. Use <StateWidget.build()> instead.";
+    throw UnsupportedError(
+      '$runtimeType.build() is invalid. Use <StateWidget.build()> instead.',
+    );
   }
 
   @override
   @mustCallSuper
   void initState() {
     super.initState();
-    if (OccamDebug.debug) print('$this initializated');
+    if (OccamDebug.debug) print('$this initialized');
   }
 
   /// Use this instead of didChangeDependencies() / initState()
