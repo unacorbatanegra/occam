@@ -137,6 +137,23 @@ void main() {
       expect(rx.disposed, isTrue);
     });
 
+    test('dispose() is idempotent', () {
+      final rx = 1.rx;
+      rx.dispose();
+      expect(() => rx.dispose(), returnsNormally);
+    });
+
+    test('using a disposed instance throws StateError', () {
+      final rx = 1.rx;
+      rx.dispose();
+      expect(() => rx.addListener(() {}), throwsStateError);
+      expect(() => rx.removeListener(() {}), throwsStateError);
+      expect(() => rx.addValueListener((_) {}), throwsStateError);
+      expect(() => rx.removeValueListener((_) {}), throwsStateError);
+      expect(() => rx.bindStream(const Stream.empty()), throwsStateError);
+      expect(() => rx.closeStream(const Stream.empty()), throwsStateError);
+    });
+
     test('dispose() removes listeners and cancels subscriptions', () async {
       final rx = 1.rx;
       var notified = 0;

@@ -13,6 +13,8 @@ analyzer:
     # disposal to the caller, so leaks must fail the build, not just warn.
     close_sinks: error
     cancel_subscriptions: error
+  exclude:
+    - build/**
 
 linter:
   rules:

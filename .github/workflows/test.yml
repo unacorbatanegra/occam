@@ -27,11 +27,16 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Verify formatting
-        run: dart format --output=none --set-exit-if-changed ./lib ./test
-
       - name: Install dependencies
         run: flutter pub get
+
+      # Must run after `pub get`: analysis_options.yaml's `include:` points at
+      # package:flutter_lints, and dart format silently falls back to
+      # different formatting rules when it can't resolve that — every file
+      # would spuriously show up as "needing" a reformat before the packages
+      # are fetched.
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed ./lib ./test
 
       # --fatal-infos: most lints (public_member_api_docs, avoid_print, the
       # strict-*-types modes) register at INFO severity, which flutter
@@ -68,13 +73,14 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Verify formatting
-        working-directory: example
-        run: dart format --output=none --set-exit-if-changed .
-
       - name: Install dependencies
         working-directory: example
         run: flutter pub get
+
+      # See the root `test` job's comment: must run after `pub get`.
+      - name: Verify formatting
+        working-directory: example
+        run: dart format --output=none --set-exit-if-changed .
 
       - name: Analyze
         working-directory: example

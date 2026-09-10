@@ -5,6 +5,10 @@ analyzer:
     # Same leak-prone-resource rules as the root package.
     close_sinks: error
     cancel_subscriptions: error
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
 
 linter:
   rules:
