@@ -155,8 +155,10 @@ ancestor), while `findStateControllerProvider()` walks with `visitAncestorElemen
 **nearest** match and throws a descriptive error. They are not interchangeable — for nested
 same-type controllers `build()` currently binds to the outermost one.
 
-A controller can also reach upward directly: `context.findRootAncestorStateOfType<HomeController>()`
-— `StateController.context` is narrowed to `StatefulElement`, so element APIs are available.
+A controller can also reach upward directly: `context.findRootAncestorStateOfType<HomeController>()`.
+`StateController.context` inherits the `BuildContext` return type from `State<T>` (rather than
+narrowing to `StatefulElement`) so that Dart's `use_build_context_synchronously` lint rule
+correctly flags unguarded `context` / `navigator` accesses across `await` gaps.
 
 ---
 
@@ -176,13 +178,13 @@ final model   = Rx<Model>(Model(name: 'Nico'));    // explicit
 
 | Member | Behavior |
 |---|---|
-| `value` setter | **skips notify when `newValue == super.value`** — equality-gated |
+| `value` setter | **skips notify when `newValue == super.value`** — equality-gated; no-op after `dispose()` |
 | `call([newValue])` | `counter(5)` sets, `counter()` reads; ignores `null` — usable directly as `onTap: rx` |
-| `refresh()` | force `notifyListeners()`; needed after mutating a field *inside* an object |
+| `refresh()` | force `notifyListeners()`; needed after mutating a field *inside* an object; no-op after `dispose()` |
 | `update((v) => …)` | functional set |
 | `addValueListener` / `removeValueListener` | `ValueChanged<T>` listeners, deduped in `_valueListeners` |
 | `bindStream(stream)` / `closeStream(stream)` | pipe a stream into the value; auto-unsubscribes `onDone` |
-| `disposed` | true after `dispose()`, to avoid use-after-dispose |
+| `disposed` | true after `dispose()`; `value` setter and `refresh()` guard on `_disposed` to avoid use-after-dispose exceptions |
 | `lengthOfListeners` | `@visibleForTesting` count |
 
 `dispose()` removes every tracked listener and cancels every subscription before
