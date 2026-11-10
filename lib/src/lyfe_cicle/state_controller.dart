@@ -24,9 +24,6 @@ class StateController<T extends StateWidget> extends State<T> {
   @protected
   void readyState() {}
 
-  @override
-  StatefulElement get context => super.context as StatefulElement;
-
   @mustCallSuper
   @override
   void dispose() {

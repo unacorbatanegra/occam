@@ -64,6 +64,32 @@ void main() {
       await tester.pumpWidget(Container());
       expect(notifier.hasListeners, false);
       expect(notifier.lengthOfListeners, 0);
+      notifier.dispose();
+    });
+
+    test('mutating or refreshing Rx after dispose is a safe no-op', () {
+      final rxInt = 1.rx;
+      final rxBool = false.rx;
+      final rxList = <int>[1].rx;
+
+      rxInt.dispose();
+      rxBool.dispose();
+      rxList.dispose();
+
+      expect(rxInt.disposed, isTrue);
+      expect(rxBool.disposed, isTrue);
+      expect(rxList.disposed, isTrue);
+
+      expect(() => rxInt.value = 42, returnsNormally);
+      expect(rxInt.value, 1);
+      expect(() => rxInt(99), returnsNormally);
+      expect(() => rxInt.update((v) => v + 1), returnsNormally);
+      expect(() => rxInt.refresh(), returnsNormally);
+
+      expect(() => rxBool.toggle(), returnsNormally);
+      expect(rxBool.value, isFalse);
+
+      expect(() => rxList.add(2), returnsNormally);
     });
   });
 }

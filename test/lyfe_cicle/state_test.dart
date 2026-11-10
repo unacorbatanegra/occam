@@ -1,4 +1,6 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:occam/occam.dart';
@@ -28,6 +30,76 @@ void main() {
       // verify(controller.onPressed()).called(1);
     },
   );
+
+  testWidgets(
+    'Async Rx mutation after StateController is disposed does not throw',
+    (tester) async {
+      final completer = Completer<int>();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AsyncPage(completer: completer),
+        ),
+      );
+
+      final controller = tester.state<AsyncPageController>(
+        find.byType(AsyncPage),
+      );
+      expect(controller.context, isA<BuildContext>());
+
+      final future = controller.loadAsync();
+      expect(controller.isLoading.value, isTrue);
+
+      // Unmount the page before the async operation completes.
+      await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+      expect(controller.mounted, isFalse);
+      expect(controller.isLoading.disposed, isTrue);
+      expect(controller.counter.disposed, isTrue);
+
+      // Completing the future mutates disposed Rx variables; should be a no-op.
+      completer.complete(10);
+      await expectLater(future, completes);
+      expect(tester.takeException(), isNull);
+    },
+  );
+}
+
+class AsyncPageController extends StateController<AsyncPage> {
+  final isLoading = false.rx;
+  final counter = 0.rx;
+
+  Future<void> loadAsync() async {
+    isLoading.value = true;
+    final result = await widget.completer.future;
+    counter.value = result;
+    isLoading.value = false;
+  }
+
+  @override
+  void dispose() {
+    isLoading.dispose();
+    counter.dispose();
+    super.dispose();
+  }
+}
+
+class AsyncPage extends StateWidget<AsyncPageController> {
+  const AsyncPage({
+    required this.completer,
+    super.key,
+  });
+
+  final Completer<int> completer;
+
+  @override
+  AsyncPageController createState() => AsyncPageController();
+
+  @override
+  Widget build(BuildContext context) {
+    return RxWidget<int>(
+      notifier: state.counter,
+      builder: (ctx, value) => Text('$value'),
+    );
+  }
 }
 
 class MyPageController extends StateController {

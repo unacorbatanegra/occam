@@ -16,10 +16,14 @@ mixin RxMixin<T> on ValueNotifier<T> {
     return value;
   }
 
-  void refresh() => notifyListeners();
+  void refresh() {
+    if (_disposed) return;
+    notifyListeners();
+  }
 
   @override
   set value(T newValue) {
+    if (_disposed) return;
     if (newValue != super.value) super.value = newValue;
   }
 
