@@ -13,6 +13,14 @@ class HomeController extends StateController<HomePage> {
     );
   }
 
+  void toCounter() {
+    Navigator.of(context).pushNamed('/counter');
+  }
+
+  void toPlayground() {
+    Navigator.of(context).pushNamed('/playground');
+  }
+
   void toBottom() {
     Navigator.of(context).pushNamed('/bottom');
   }

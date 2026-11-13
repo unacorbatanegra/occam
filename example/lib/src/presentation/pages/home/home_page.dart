@@ -78,6 +78,16 @@ class HomePage extends StateWidget<HomeController> {
                 onPressed: state.toBottom,
                 child: const Text('To Bottom'),
               ),
+              const SizedBox(height: 8),
+              FilledButton.tonal(
+                onPressed: state.toCounter,
+                child: const Text('To Counter (the minimal example)'),
+              ),
+              const SizedBox(height: 8),
+              FilledButton.tonal(
+                onPressed: state.toPlayground,
+                child: const Text('To Rx playground'),
+              ),
             ],
           ),
         ],

@@ -40,17 +40,6 @@ void main() {
   });
 
   testWidgets(
-      'Home Page - NestedChild reaches the ancestor controller directly',
-      (tester) async {
-    await tester.pumpWidget(const MyApp());
-
-    expect(find.text('reactive 1'), findsOneWidget);
-    await tester.tap(find.text('nested child'));
-    await tester.pump();
-    expect(find.text('reactive 2'), findsOneWidget);
-  });
-
-  testWidgets(
       'Home Page - TestStateless (nested ParentState) reaches the ancestor',
       (tester) async {
     await tester.pumpWidget(const MyApp());

@@ -1,5 +1,4 @@
 import 'package:example/src/presentation/pages/home/home_controller.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:occam/occam.dart';
 
@@ -15,10 +14,7 @@ class NestedChild extends StateWidget<NestedController> {
   Widget build(BuildContext context, NestedController state) {
     return Column(
       children: [
-        CupertinoButton(
-          onPressed: state.onTap,
-          child: const Center(child: Text('nested child')),
-        ),
+        const Text('nested child'),
         const TestStateless(),
       ],
     );
