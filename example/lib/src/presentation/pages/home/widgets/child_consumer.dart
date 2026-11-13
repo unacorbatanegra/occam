@@ -1,0 +1,15 @@
+import 'package:example/src/presentation/pages/home/home_controller.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:occam/occam.dart';
+
+class ChildConsumer extends ParentState<HomeController> {
+  const ChildConsumer({super.key});
+
+  @override
+  Widget build(BuildContext context, HomeController state) {
+    return CupertinoButton(
+      onPressed: state.onTap,
+      child: const Center(child: Text('child consumer')),
+    );
+  }
+}

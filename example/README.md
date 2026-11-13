@@ -1,16 +1,19 @@
 # example
 
-A new Flutter project.
+Runnable demo for [occam](../README.md). Start with `lib/main.dart`: it is the
+whole package in one file (`CounterPage` + `CounterController`), plus an index of
+the other pages.
 
-## Getting Started
+```bash
+flutter run
+```
 
-This project is a starting point for a Flutter application.
+| Route | Page | Shows |
+|---|---|---|
+| `/counter` | `CounterPage` (in `main.dart`) | `StateWidget`, `StateController`, `.rx`, `RxWidget` |
+| `/` | `HomePage` | `Rx<int>`, `Rx<Model>` + `refresh()`, `ParentState` (also nested), navigation |
+| `/playground` | `PlaygroundPage` | `readyState()`, `RxBool`, `call`/`update`, `addValueListener`, `bindStream`/`closeStream`, `RxList` mutations, `disposed`, `AutomaticKeepAliveClientMixin` |
+| `/secondPage` | `SecondPage` | an `RxList<String>` rendered as a list |
+| `/bottom` | `BottomPage` | one `StateWidget` per tab with `PageStorage` |
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
-
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Tests: `flutter test` (one widget test per demo).

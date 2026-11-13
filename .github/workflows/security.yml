@@ -1,0 +1,32 @@
+name: security
+
+on:
+  schedule:
+    # 06:00 UTC daily (~03:00 ART)
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Only PRs cancel superseded runs; pushes to master always finish.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  dependencies:
+    name: dependency advisories
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      # Official image; no license key required, unlike the gitleaks action.
+      - name: OSV-Scanner
+        run: |
+          docker run --rm -v "${PWD}:/src" -w /src \
+            ghcr.io/google/osv-scanner:latest scan source -r /src

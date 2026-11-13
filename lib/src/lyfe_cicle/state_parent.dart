@@ -1,112 +1,92 @@
-part of '../../../occam.dart';
+part of '../../occam.dart';
 
-/// Convenience widget to read a `StateController` higher up the tree.
+/// A widget that reads a [StateController] owned by an ancestor [StateWidget].
 ///
-/// `ParentState` widgets do not create their own `StateController`; instead,
-/// they read the nearest ancestor `StateWidget` of the desired controller type
-/// and expose it via the `state` getter. This is handy for composing helper
-/// widgets that still need to call controller methods.
+/// Use it for a child that needs its parent's controller instead of one of its
+/// own. The controller is resolved by walking up the element tree and handed to
+/// [build] as a parameter:
 ///
 /// ```dart
-/// class CounterActions extends ParentState<CounterController> {
-///   const CounterActions({super.key});
+/// class ChildConsumer extends ParentState<HomeController> {
+///   const ChildConsumer({super.key});
 ///
 ///   @override
-///   Widget build(BuildContext context) {
-///     return IconButton(
-///       icon: const Icon(Icons.add),
-///       onPressed: state.increment,
-///     );
+///   Widget build(BuildContext context, HomeController state) {
+///     return TextButton(onPressed: state.onTap, child: const Text('tap'));
 ///   }
 /// }
 /// ```
-/// Stateless widget that reads a controller from the ancestor tree.
-abstract class ParentState<T extends StateController> extends StatelessWidget
-    with ParentStateMixin<T> {
+///
+/// The nearest matching ancestor wins, so nesting two providers of the same type
+/// resolves to the inner one. Because resolution goes through the element and
+/// not through the widget object, mounting the same `const ParentState()` object
+/// several times gives each instance its own provider.
+abstract class ParentState<T extends StateController<dynamic>> extends Widget {
+  /// Reads the nearest ancestor `StateWidget<T>`'s controller.
   const ParentState({super.key});
-}
 
-/// Mixin that exposes a [StateController] through the [state] getter.
-mixin ParentStateMixin<T extends StateController> on StatelessWidget {
-  /// Provides the nearest ancestor `StateController<T>`.
-  T get state => (StateElement._elements[this] as ParentStateElement<T>).otherState;
+  /// Describes this widget's UI.
+  ///
+  /// [state] is the controller of the nearest ancestor `StateWidget<T>`.
+  Widget build(BuildContext context, T state);
+
   @override
-  ParentStateElement createElement() {
-    assert(const Object() is! T, '''
-          You have to provide a subclass of StateController:
-          $runtimeType extends ParentStateWidget<StateController>
-       ''');
+  ParentStateElement<T> createElement() {
+    assert(
+      T != StateController<dynamic>,
+      'Provide a concrete controller type: '
+      '$runtimeType extends ParentState<MyController>',
+    );
     return ParentStateElement<T>(this);
   }
 }
 
-/// Element that maintains a link to the nearest matching [StateController].
-class ParentStateElement<T extends StateController> extends StatelessElement {
-  /// Creates the element and registers it in the shared lookup table.
-  ParentStateElement(StatelessWidget widget) : super(widget) {
-    StateElement._elements[widget] = this;
-  }
-  T? _otherState;
+/// The [Element] backing every [ParentState]. Resolves the ancestor
+/// controller lazily on first build and caches it until [deactivate].
+class ParentStateElement<T extends StateController<dynamic>>
+    extends ComponentElement {
+  /// Creates the element for [ParentState] subclass instance [widget].
+  ParentStateElement(ParentState<T> super.widget);
 
-  /// Returns the resolved controller or throws if accessed too early.
-  T get otherState {
-    final state = _otherState;
-    assert(state != null, 'ParentStateElement accessed before it was ready');
-    return state!;
-  }
-
-  /// Clears the cached controller when inserting into the tree.
   @override
-  void mount(Element? parent, Object? newSlot) {
-    _otherState = null;
-    super.mount(parent, newSlot);
-  }
+  ParentState<T> get widget => super.widget as ParentState<T>;
 
-  /// Recomputes the controller before building descendants.
+  /// Resolved lazily on first build, when ancestors are reachable, and dropped
+  /// on [deactivate] so a widget reinserted elsewhere resolves again.
+  T? _provided;
+
   @override
-  Widget build() {
-    _resolveOtherState();
-    return super.build();
-  }
+  Widget build() => widget.build(this, _provided ??= _findProvider());
 
-  /// Removes the registration and cached controller on teardown.
-  @override
-  void unmount() {
-    _otherState = null;
-    StateElement._elements[widget] = null;
-    super.unmount();
-  }
-
-  /// Keeps the cached controller fresh when the widget updates.
-  @override
-  void update(StatelessWidget newWidget) {
-    StateElement._elements[newWidget] = this;
-    _resolveOtherState();
-    super.update(newWidget);
-  }
-
-  /// Resolves (or re-resolves) the controller from the ancestor tree.
-  void _resolveOtherState() {
-    final resolved = findStateControllerProvider();
-    if (identical(resolved, _otherState)) {
-      return;
-    }
-    _otherState = resolved;
-  }
-
-  /// Traverses ancestors to find the nearest matching [StateController].
-  T findStateControllerProvider() {
-    T? state;
+  /// The nearest ancestor controller of type [T].
+  T _findProvider() {
+    T? found;
     visitAncestorElements((element) {
       if (element is StateElement && element.state is T) {
-        state = element.state as T;
+        found = element.state as T;
         return false;
       }
       return true;
     });
-    if (state == null) {
-      throw '[ParentStateWidget] can\'t find a parent StateController <$T> dependency in the Widget tree. Make sure you have a StateWidget<$T> somewhere up the tree';
+    if (found == null) {
+      throw FlutterError(
+        '${widget.runtimeType} could not find an ancestor StateWidget<$T>.\n'
+        'ParentState reads a controller owned by a parent, so a '
+        'StateWidget<$T> must sit above it in the widget tree.',
+      );
     }
-    return state!;
+    return found!;
+  }
+
+  @override
+  void update(ParentState<T> newWidget) {
+    super.update(newWidget);
+    rebuild(force: true);
+  }
+
+  @override
+  void deactivate() {
+    _provided = null;
+    super.deactivate();
   }
 }
