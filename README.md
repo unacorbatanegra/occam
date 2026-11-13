@@ -1,7 +1,7 @@
 # Occam
 
 [![CI](https://github.com/unacorbatanegra/occam/actions/workflows/test.yml/badge.svg)](https://github.com/unacorbatanegra/occam/actions/workflows/test.yml)
-[![pub package](https://img.shields.io/pub/v/occam.svg)](https://pub.dev/packages/occam)
+[![pub package](https://img.shields.io/pub/v/occam.svg?include_prereleases)](https://pub.dev/packages/occam)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Flutter](https://img.shields.io/badge/Flutter-3.0+-blue.svg)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.0+-blue.svg)](https://dart.dev)
@@ -12,11 +12,13 @@ A simple state manager built on native Flutter `StatefulWidget`, made for my own
 
 - [Philosophy](#philosophy)
 - [Installation](#installation)
+- [Migrating from 1.x](#migrating-from-1x)
 - [Quick start](#quick-start)
 - [State manager](#state-manager)
 - [Sharing a controller: `ParentState`](#sharing-a-controller-parentstate)
 - [Rx types](#rx-types)
 - [Example](#example)
+- [Quality](#quality)
 
 ## Philosophy
 
@@ -42,8 +44,9 @@ mental model bigger, or does it stay the same size? In practice that means:
 - **Nothing is implicit, except one opt-in.** Reactivity only exists where you write
   `RxWidget`; disposal is always the caller's, never automatic; a widget's own controller is
   handed to `build` as a parameter, never looked up from ambient/global state. The single
-  implicit lookup is `ParentState`, and only when you choose to extend it. If you can't point at the line responsible for a behavior,
-  something is wrong with the library, not with your understanding of it.
+  implicit lookup is `ParentState`, and only when you choose to extend it. If you can't
+  point at the line responsible for a behavior, something is wrong with the library, not
+  with your understanding of it.
 
 Every other section below is that same idea applied to one concrete piece of the API — if
 something here feels like it's doing more than it needs to, that's a bug in the library, not
@@ -61,6 +64,27 @@ dependencies:
 
 `2.0.0` is currently in beta: pub only resolves a prerelease when the constraint names one,
 as above. Once `2.0.0` is stable, `^2.0.0` works as usual.
+
+## Migrating from 1.x
+
+`2.0.0` has one breaking change: `StateWidget.build` receives the controller as a parameter,
+and the `StateWidget.state` getter is gone.
+
+```dart
+// before
+Widget build(BuildContext context) { ... state.counter ... }
+
+// after
+Widget build(BuildContext context, HomeController state) { ... state.counter ... }
+```
+
+One line per widget, and the compiler points at each one. If the parameter is named `state`,
+the method body compiles unchanged. See `CHANGELOG.md` for why (a `const` widget mounted more
+than once could read another instance's controller).
+
+**Testing the beta:** please try it on a screen that mounts the same `const` widget several
+times, and report anything odd in the
+[issues](https://github.com/unacorbatanegra/occam/issues).
 
 ## Quick start
 
