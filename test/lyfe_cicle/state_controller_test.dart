@@ -7,6 +7,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:occam/occam.dart';
 
@@ -47,6 +48,38 @@ void main() {
     expect(logs, hasLength(2));
     expect(logs[0], contains('initialized'));
     expect(logs[1], contains('disposed'));
+  });
+
+  group('AutomaticKeepAliveClientMixin on a StateController', () {
+    Future<void> scrollAwayAndBack(WidgetTester tester) async {
+      await tester.drag(find.byType(ListView), const Offset(0, -3000));
+      await tester.pump();
+      await tester.drag(find.byType(ListView), const Offset(0, 3000));
+      await tester.pump();
+    }
+
+    Widget list(Widget first) => MaterialApp(
+          home: ListView(
+            scrollCacheExtent: const ScrollCacheExtent.pixels(0),
+            children: [first, const SizedBox(height: 4000)],
+          ),
+        );
+
+    testWidgets('control: without the mixin the controller is recreated',
+        (tester) async {
+      final events = <String>[];
+      await tester.pumpWidget(list(_LifeWidget(events, keepAlive: false)));
+      await scrollAwayAndBack(tester);
+      expect(events, ['init', 'dispose', 'init']);
+    });
+
+    testWidgets('with the mixin the controller stays alive off-screen',
+        (tester) async {
+      final events = <String>[];
+      await tester.pumpWidget(list(_LifeWidget(events, keepAlive: true)));
+      await scrollAwayAndBack(tester);
+      expect(events, ['init']);
+    });
   });
 
   testWidgets('context narrows to StatefulElement', (tester) async {
@@ -108,4 +141,36 @@ class _ContextProbe extends StateWidget<_ContextProbeController> {
   @override
   Widget build(BuildContext context, _ContextProbeController state) =>
       const SizedBox();
+}
+
+class _LifeController extends StateController<_LifeWidget>
+    with AutomaticKeepAliveClientMixin<_LifeWidget> {
+  @override
+  bool get wantKeepAlive => widget.keepAlive;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.events.add('init');
+  }
+
+  @override
+  void dispose() {
+    widget.events.add('dispose');
+    super.dispose();
+  }
+}
+
+class _LifeWidget extends StateWidget<_LifeController> {
+  const _LifeWidget(this.events, {required this.keepAlive});
+
+  final List<String> events;
+  final bool keepAlive;
+
+  @override
+  _LifeController createState() => _LifeController();
+
+  @override
+  Widget build(BuildContext context, _LifeController state) =>
+      const SizedBox(height: 100);
 }

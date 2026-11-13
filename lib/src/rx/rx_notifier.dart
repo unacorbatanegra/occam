@@ -47,27 +47,32 @@ mixin RxMixin<T> on ValueNotifier<T> {
 
   final Map<Stream<T>, StreamSubscription<T>> _subscriptions = {};
 
-  final _listeners = <VoidCallback>[];
+  // A counter, not a list: removing from a second list doubled the O(n)
+  // cost of every removeListener (~7x slower than a plain ValueNotifier).
+  int _listenerCount = 0;
 
   final Map<ValueChanged<T>, VoidCallback> _valueListeners = {};
 
   @override
   void addListener(VoidCallback listener) {
     _checkDisposed();
-    _listeners.add(listener);
+    _listenerCount++;
     super.addListener(listener);
   }
 
+  /// A no-op once disposed: a widget's `dispose()` often runs after the
+  /// controller already disposed the notifier, and must not throw.
   @override
   void removeListener(VoidCallback listener) {
-    _checkDisposed();
+    if (_disposed) return;
     super.removeListener(listener);
-    _listeners.remove(listener);
+    if (_listenerCount > 0) _listenerCount--;
   }
 
-  /// Number of listeners currently attached, for tests.
+  /// Number of listeners currently attached, for tests. Counts add/remove
+  /// calls, so removing a listener that was never added skews it.
   @visibleForTesting
-  int get lengthOfListeners => _listeners.length;
+  int get lengthOfListeners => _listenerCount;
 
   /// Subscribes [listener] to value changes, called once immediately with
   /// the current value is not implied — it only fires on the next change.
@@ -96,30 +101,29 @@ mixin RxMixin<T> on ValueNotifier<T> {
     return _subscriptions.remove(stream)?.cancel();
   }
 
-  /// Pipes every event from [stream] into [value]. Binding the same [stream]
-  /// again replaces the previous subscription. The subscription is cancelled
-  /// automatically when [stream] closes, and on [dispose].
+  /// Pipes every event from [stream] into [value]. Binding the same
+  /// broadcast [stream] again replaces the previous subscription; a
+  /// single-subscription [stream] can only be listened to once, so binding it
+  /// again is a no-op. The subscription is cancelled automatically when
+  /// [stream] closes, and on [dispose].
   void bindStream(Stream<T> stream) {
     _checkDisposed();
+    if (!stream.isBroadcast && _subscriptions.containsKey(stream)) return;
     _subscriptions.remove(stream)?.cancel();
 
-    late StreamSubscription<T> subscription;
-
-    subscription = stream
+    final subscription = stream
         .asBroadcastStream(
-      // Without this, cancelling our subscription below only detaches
-      // our listener from the broadcast wrapper — the wrapper stays
-      // subscribed to the original [stream] forever (that's the
-      // documented default), leaking it until [stream] itself completes.
-      onCancel: (wrapperSubscription) => wrapperSubscription.cancel(),
-    )
+          // Without this, cancelling our subscription below only detaches
+          // our listener from the broadcast wrapper — the wrapper stays
+          // subscribed to the original [stream] forever (that's the
+          // documented default), leaking it until [stream] itself completes.
+          onCancel: (wrapperSubscription) => wrapperSubscription.cancel(),
+        )
         .listen(
-      (event) => value = event,
-      onDone: () {
-        subscription.cancel();
-        _subscriptions.remove(stream);
-      },
-    );
+          (event) => value = event,
+          // Looked up by key: onDone may fire before `subscription` is assigned.
+          onDone: () => _subscriptions.remove(stream)?.cancel(),
+        );
 
     _subscriptions[stream] = subscription;
   }
@@ -141,9 +145,9 @@ mixin RxMixin<T> on ValueNotifier<T> {
   @override
   void dispose() {
     if (_disposed) return;
-    for (final listener in List<VoidCallback>.from(_listeners)) {
-      removeListener(listener);
-    }
+    // Not removeListener() per listener: each is O(n), so looping made
+    // dispose O(n²). super.dispose() drops the real ones.
+    _listenerCount = 0;
     for (final subscription in _subscriptions.values) {
       subscription.cancel();
     }

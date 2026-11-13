@@ -86,5 +86,18 @@ void main() {
       await tester.pump();
       expect(find.text('200'), findsOneWidget);
     });
+
+    testWidgets('unmounting after the notifier was disposed does not throw',
+        (tester) async {
+      final n = 1.rx;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RxWidget(notifier: n, builder: (ctx, v) => Text('$v')),
+        ),
+      );
+      n.dispose();
+      await tester.pumpWidget(Container());
+      expect(tester.takeException(), isNull);
+    });
   });
 }

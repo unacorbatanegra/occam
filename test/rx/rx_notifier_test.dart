@@ -103,6 +103,19 @@ void main() {
       await controller.close();
     });
 
+    test('rebinding a single-subscription stream is a no-op', () async {
+      final rx = 0.rx;
+      final controller = StreamController<int>();
+      rx.bindStream(controller.stream);
+      expect(() => rx.bindStream(controller.stream), returnsNormally);
+
+      controller.add(2);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(rx.value, 2);
+      await controller.close();
+    });
+
     test('a stream closing (onDone) cleans up its subscription', () async {
       final rx = 0.rx;
       final controller = StreamController<int>();
@@ -147,7 +160,7 @@ void main() {
       final rx = 1.rx;
       rx.dispose();
       expect(() => rx.addListener(() {}), throwsStateError);
-      expect(() => rx.removeListener(() {}), throwsStateError);
+      expect(() => rx.removeListener(() {}), returnsNormally);
       expect(() => rx.addValueListener((_) {}), throwsStateError);
       expect(() => rx.removeValueListener((_) {}), throwsStateError);
       expect(() => rx.bindStream(const Stream.empty()), throwsStateError);
