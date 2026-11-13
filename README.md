@@ -1,5 +1,6 @@
 # Occam
 
+[![CI](https://github.com/unacorbatanegra/occam/actions/workflows/test.yml/badge.svg)](https://github.com/unacorbatanegra/occam/actions/workflows/test.yml)
 [![pub package](https://img.shields.io/pub/v/occam.svg)](https://pub.dev/packages/occam)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Flutter](https://img.shields.io/badge/Flutter-3.0+-blue.svg)](https://flutter.dev)
@@ -15,6 +16,7 @@ A simple state manager built on native Flutter `StatefulWidget`, made for my own
 - [State manager](#state-manager)
 - [Sharing a controller: `ParentState`](#sharing-a-controller-parentstate)
 - [Rx types](#rx-types)
+- [Example](#example)
 
 ## Philosophy
 
@@ -37,9 +39,10 @@ mental model bigger, or does it stay the same size? In practice that means:
   responsibilities you're trusting yourself to respect. There's no widget-building path with
   access to your logic's internals, and no controller method that receives a `BuildContext`
   it isn't explicitly handed — the split is enforced by the type system, not by convention.
-- **Nothing is implicit.** Reactivity only exists where you write `RxWidget`; disposal is
-  always the caller's, never automatic; a controller is always looked up by explicit type,
-  never by ambient/global state. If you can't point at the line responsible for a behavior,
+- **Nothing is implicit, except one opt-in.** Reactivity only exists where you write
+  `RxWidget`; disposal is always the caller's, never automatic; a widget's own controller is
+  handed to `build` as a parameter, never looked up from ambient/global state. The single
+  implicit lookup is `ParentState`, and only when you choose to extend it. If you can't point at the line responsible for a behavior,
   something is wrong with the library, not with your understanding of it.
 
 Every other section below is that same idea applied to one concrete piece of the API — if
@@ -53,8 +56,11 @@ a feature you're missing.
 
 ```yaml
 dependencies:
-  occam: ^2.0.1
+  occam: ^2.0.0-beta.1
 ```
+
+`2.0.0` is currently in beta: pub only resolves a prerelease when the constraint names one,
+as above. Once `2.0.0` is stable, `^2.0.0` works as usual.
 
 ## Quick start
 
@@ -130,6 +136,10 @@ class HomeController extends StateController<HomePage> {
 }
 ```
 
+`StateController` is a regular `State`, so Flutter's own mixins work on it, e.g.
+`AutomaticKeepAliveClientMixin` to keep a controller alive inside a `ListView` or
+`TabBarView` (covered by a test).
+
 ## Sharing a controller: `ParentState`
 
 A child that needs an *ancestor's* controller instead of its own extends `ParentState<T>`
@@ -181,6 +191,27 @@ RxWidget<int>(
 ```
 
 Every `Rx` value must be disposed by whoever created it — occam never disposes one for you.
+
+## Example
+
+`example/` is a runnable app (`cd example && flutter run`). Its `lib/main.dart` is the
+minimal version (`CounterPage`, in one file); the home screen links to the rest:
+
+| Route | Shows |
+|---|---|
+| `/counter` | the whole package in one file: `StateWidget`, `StateController`, `.rx`, `RxWidget` |
+| `/` | `Rx<int>`, `Rx<Model>` + `refresh()`, `ParentState` (also nested), navigation |
+| `/playground` | `readyState()`, `RxBool`, `call`/`update`, `addValueListener`, `bindStream`/`closeStream`, `RxList` mutations, `disposed`, `AutomaticKeepAliveClientMixin` |
+| `/secondPage` | an `RxList<String>` rendered as a list |
+| `/bottom` | one `StateWidget` per tab with `PageStorage` |
+
+Every demo has a widget test under `example/test/`.
+
+## Quality
+
+CI runs format, `flutter analyze --fatal-infos`, the full test suite gated at **100% coverage**
+(`test_cov_console`), automatic leak detection on every widget test, a 2,000-instance
+mount/unmount soak test, and `dart pub publish --dry-run`.
 
 ---
 

@@ -48,7 +48,7 @@ class HomeController extends StateController<HomePage> {
 
   @override
   void readyState() {                   // context is safe here (post-frame)
-    print(navArgs);
+    print(ModalRoute.of(context)?.settings.name);
   }
 
   @override
@@ -87,7 +87,7 @@ lib/src/rx/
   iterables/rx_list.dart             RxList<T>
   extensions/extensions.dart         `.rx` getters on T, bool, List<T>
   widgets/rx_widget.dart             RxWidget<T> — the only rebuild primitive
-example/                             runnable app exercising every feature
+example/                             runnable app; lib/main.dart is the pub.dev example (CounterPage); every public feature has a page + test (see README "Example")
 test/                                mirrors lib/ 1:1, plus flutter_test_config.dart
 ```
 

@@ -1,4 +1,4 @@
-## 2.0.0
+## 2.0.0-beta.1
 
 **Breaking:** `StateWidget.build` now receives the controller as a parameter.
 
@@ -13,6 +13,11 @@ Widget build(BuildContext context, HomeController state) { ... state.counter ...
 Migration is one line per widget, and the compiler points at every one. If the
 parameter is named `state`, existing method bodies compile unchanged.
 
+- `Docs` `example/` now covers the whole public API: `main.dart` (what pub.dev
+  shows) is a self-contained counter, and a new `/playground` page demos
+  `readyState`, `RxBool`, `call`/`update`, `addValueListener`,
+  `bindStream`/`closeStream`, every `RxList` mutation, `disposed` and
+  `AutomaticKeepAliveClientMixin`, each with a widget test.
 - `Fix` a widget mounted more than once from the same object (a `const` widget
   reused on a page, e.g. a banner or a category row) could read another
   instance's controller. Reads evaluated after `build()` returned — inside a
