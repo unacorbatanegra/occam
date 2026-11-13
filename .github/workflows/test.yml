@@ -14,9 +14,17 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Only PRs cancel superseded runs; pushes to master always finish.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
+    # The weekly schedule exists only for the benchmarks job below.
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -49,8 +57,10 @@ jobs:
         run: flutter test --coverage
 
       # test_cov_console --pass only PRINTS PASSED/FAILED, it does not set a
-      # process exit code — grep for the word ourselves so a drop below 100%
-      # actually fails the job instead of only showing up in the log.
+      # process exit code — grep for the words ourselves so a drop below 100%
+      # actually fails the job instead of only showing up in the log. PASSED
+      # must be present too: if the tool crashes and prints nothing, that is
+      # a failure, not a pass.
       # occam.dart/occam_debug.dart are excluded: they have no instrumentable
       # lines (library directives / a single static field), so lcov reports
       # them as "no unit testing" and would otherwise drag the total down.
@@ -58,13 +68,15 @@ jobs:
         run: |
           dart run test_cov_console --file=coverage/lcov.info \
             --exclude=occam.dart,occam_debug.dart --pass=100 | tee coverage/report.txt
-          grep -q FAILED coverage/report.txt && exit 1 || true
+          grep -q PASSED coverage/report.txt && ! grep -q FAILED coverage/report.txt
 
       - name: Verify the package is publishable
         run: dart pub publish --dry-run
 
   example:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -84,7 +96,7 @@ jobs:
 
       - name: Analyze
         working-directory: example
-        run: flutter analyze .
+        run: flutter analyze --fatal-infos .
 
       - name: Run tests
         working-directory: example
@@ -95,6 +107,7 @@ jobs:
     # gate every push/PR on; this job never fails the build, it just prints.
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
