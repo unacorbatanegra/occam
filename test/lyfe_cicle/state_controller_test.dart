@@ -82,14 +82,43 @@ void main() {
     });
   });
 
-  testWidgets('context narrows to StatefulElement', (tester) async {
-    late StatefulElement captured;
-    await tester.pumpWidget(
-      MaterialApp(home: _ContextProbe(onReady: (c) => captured = c)),
-    );
-    await tester.pump();
-    expect(captured, isA<StatefulElement>());
-  });
+  testWidgets(
+    'context has static type BuildContext (preserving use_build_context_synchronously)',
+    (tester) async {
+      late BuildContext captured;
+      await tester.pumpWidget(
+        MaterialApp(home: _ContextProbe(onReady: (c) => captured = c)),
+      );
+      await tester.pump();
+      expect(captured, isA<BuildContext>());
+      expect(captured, isA<StatefulElement>());
+    },
+  );
+
+  testWidgets(
+    'async Rx mutation after StateController is disposed does not throw',
+    (tester) async {
+      final completer = Completer<int>();
+      await tester.pumpWidget(
+        MaterialApp(home: _AsyncPage(completer: completer)),
+      );
+
+      final controller = tester.state<_AsyncPageController>(
+        find.byType(_AsyncPage),
+      );
+      final future = controller.loadAsync();
+      expect(controller.isLoading.value, isTrue);
+
+      await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+      expect(controller.mounted, isFalse);
+      expect(controller.isLoading.disposed, isTrue);
+      expect(controller.counter.disposed, isTrue);
+
+      completer.complete(10);
+      await expectLater(future, completes);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
 
 Future<List<String>> _capturePrints(Future<void> Function() body) async {
@@ -133,7 +162,7 @@ class _ContextProbeController extends StateController<_ContextProbe> {
 class _ContextProbe extends StateWidget<_ContextProbeController> {
   const _ContextProbe({required this.onReady});
 
-  final ValueChanged<StatefulElement> onReady;
+  final ValueChanged<BuildContext> onReady;
 
   @override
   _ContextProbeController createState() => _ContextProbeController();
@@ -141,6 +170,42 @@ class _ContextProbe extends StateWidget<_ContextProbeController> {
   @override
   Widget build(BuildContext context, _ContextProbeController state) =>
       const SizedBox();
+}
+
+class _AsyncPageController extends StateController<_AsyncPage> {
+  final isLoading = false.rx;
+  final counter = 0.rx;
+
+  Future<void> loadAsync() async {
+    isLoading.value = true;
+    final result = await widget.completer.future;
+    counter.value = result;
+    isLoading.value = false;
+  }
+
+  @override
+  void dispose() {
+    isLoading.dispose();
+    counter.dispose();
+    super.dispose();
+  }
+}
+
+class _AsyncPage extends StateWidget<_AsyncPageController> {
+  const _AsyncPage({required this.completer});
+
+  final Completer<int> completer;
+
+  @override
+  _AsyncPageController createState() => _AsyncPageController();
+
+  @override
+  Widget build(BuildContext context, _AsyncPageController state) {
+    return RxWidget<int>(
+      notifier: state.counter,
+      builder: (ctx, value) => Text('$value'),
+    );
+  }
 }
 
 class _LifeController extends StateController<_LifeWidget>
