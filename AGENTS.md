@@ -190,13 +190,13 @@ final model   = Rx<Model>(Model(name: 'Nico'));    // explicit
 
 | Member | Behavior |
 |---|---|
-| `value` setter | **skips notify when `newValue == super.value`** — equality-gated |
+| `value` setter | **skips notify when `newValue == super.value`** — equality-gated; no-op after `dispose()` |
 | `call([newValue])` | `counter(5)` sets, `counter()` reads; ignores `null` — usable directly as `onTap: rx` |
-| `refresh()` | force `notifyListeners()`; needed after mutating a field *inside* an object |
+| `refresh()` | force `notifyListeners()`; needed after mutating a field *inside* an object; no-op after `dispose()` |
 | `update((v) => …)` | functional set |
 | `addValueListener` / `removeValueListener` | `ValueChanged<T>` listeners, deduped |
 | `bindStream(stream)` / `closeStream(stream)` | pipe a stream into the value; auto-unsubscribes `onDone` |
-| `disposed` | true after `dispose()`, to avoid use-after-dispose |
+| `disposed` | true after `dispose()`; `value` setter, `refresh()`, and `removeListener()` are no-ops after `dispose()` |
 | `lengthOfListeners` | `@visibleForTesting` count |
 
 `dispose()` removes every tracked listener and cancels every subscription before

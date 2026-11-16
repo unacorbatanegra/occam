@@ -167,6 +167,27 @@ void main() {
       expect(() => rx.closeStream(const Stream.empty()), throwsStateError);
     });
 
+    test('mutating or refreshing a disposed instance is a safe no-op', () {
+      final rxInt = 1.rx;
+      final rxBool = false.rx;
+      final rxList = <int>[1].rx;
+
+      rxInt.dispose();
+      rxBool.dispose();
+      rxList.dispose();
+
+      expect(() => rxInt.value = 42, returnsNormally);
+      expect(rxInt.value, 1);
+      expect(() => rxInt(99), returnsNormally);
+      expect(() => rxInt.update((v) => v + 1), returnsNormally);
+      expect(() => rxInt.refresh(), returnsNormally);
+
+      expect(() => rxBool.toggle(), returnsNormally);
+      expect(rxBool.value, isFalse);
+
+      expect(() => rxList.add(2), returnsNormally);
+    });
+
     test('dispose() removes listeners and cancels subscriptions', () async {
       final rx = 1.rx;
       var notified = 0;

@@ -32,11 +32,21 @@ mixin RxMixin<T> on ValueNotifier<T> {
 
   /// Forces [notifyListeners] without changing [value] — needed after
   /// mutating a field *inside* an object held by this notifier.
-  void refresh() => notifyListeners();
+  ///
+  /// A no-op once disposed, so in-flight async work completing after
+  /// controller teardown does not throw.
+  void refresh() {
+    if (_disposed) return;
+    notifyListeners();
+  }
 
   /// Skips notifying listeners when [newValue] equals the current value.
+  ///
+  /// A no-op once disposed, so in-flight async work completing after
+  /// controller teardown does not throw.
   @override
   set value(T newValue) {
+    if (_disposed) return;
     if (newValue != super.value) super.value = newValue;
   }
 
