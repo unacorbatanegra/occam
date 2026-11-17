@@ -123,7 +123,9 @@ jobs:
       - run: flutter pub get
 
       - name: Run benchmarks
+        # The files have no test(), so newer Flutter exits 79 ("No tests were
+        # found") after printing the numbers; treat only that code as success.
         run: |
-          flutter test benchmark/rx_notifier_benchmark.dart
-          flutter test benchmark/rx_list_benchmark.dart
-          flutter test benchmark/widget_benchmark.dart
+          for f in rx_notifier rx_list widget; do
+            flutter test benchmark/${f}_benchmark.dart || [ $? -eq 79 ]
+          done
